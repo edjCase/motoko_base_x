@@ -7,12 +7,27 @@ import Prelude "mo:base/Prelude";
 import Result "mo:new-base/Result";
 import Char "mo:new-base/Char";
 import Nat "mo:new-base/Nat";
+import Debug "mo:new-base/Debug";
 
 module {
 
+    public type HexInputFormat = {
+        prefix : HexPrefixKind;
+    };
+
+    public type HexOutputFormat = {
+        isUpper : Bool;
+        prefix : HexPrefixKind;
+    };
+
+    public type HexPrefixKind = {
+        #none;
+        #single : Text; // '0x' -> 0xABCD
+        #perByte : Text; // '\x' -> \xAB\xCD
+    };
+
     // Base64 Functions
     public func toBase64(data : Iter.Iter<Nat8>, isUriSafe : Bool) : Text {
-
         var ret = "";
         var remain : Nat32 = 0;
         var bits : Nat32 = 0;
@@ -104,23 +119,70 @@ module {
     };
 
     // Hex Functions
-    public func toHex(data : Iter.Iter<Nat8>) : Text {
+
+    public func toBase16(data : Iter.Iter<Nat8>, format : HexOutputFormat) : Text {
+        toHex(data, format);
+    };
+
+    public func toHex(data : Iter.Iter<Nat8>, format : HexOutputFormat) : Text {
         var result = "";
+        let perBytePrefix : ?Text = switch (format.prefix) {
+            case (#none) null;
+            case (#single(prefix)) {
+                result #= prefix;
+                null;
+            };
+            case (#perByte(prefix)) ?prefix;
+        };
 
         for (byte in data) {
             let highNibble = byte / 16;
             let lowNibble = byte % 16;
 
-            let ?highNibbleChar = hexCharFromNibble(highNibble) else Prelude.unreachable();
-            let ?lowNibbleChar = hexCharFromNibble(lowNibble) else Prelude.unreachable();
+            let ?highNibbleChar = hexCharFromNibble(highNibble, format.isUpper) else Prelude.unreachable();
+            let ?lowNibbleChar = hexCharFromNibble(lowNibble, format.isUpper) else Prelude.unreachable();
+            switch (perBytePrefix) {
+                case (null) ();
+                case (?prefix) {
+                    result #= prefix;
+                };
+            };
             result #= Char.toText(highNibbleChar) # Char.toText(lowNibbleChar);
         };
 
         result;
     };
 
-    public func fromHex(hex : Text) : Result.Result<[Nat8], Text> {
-        let input = Text.toArray(hex);
+    public func fromBase16(base16 : Text, format : HexInputFormat) : Result.Result<[Nat8], Text> {
+        fromHex(base16, format);
+    };
+
+    public func fromHex(hex : Text, format : HexInputFormat) : Result.Result<[Nat8], Text> {
+        let input : [Char] = switch (format.prefix) {
+            case (#none) Text.toArray(hex);
+            case (#single(prefix)) {
+                let ?realHex = Text.stripStart(hex, #text(prefix)) else return #err("Invalid Value: Hex string must start with prefix '" # prefix # "'");
+                Text.toArray(realHex);
+            };
+            case (#perByte(prefix)) {
+                let parts = Text.split(hex, #text(prefix));
+                var inputBuffer = Buffer.Buffer<Char>(hex.size());
+                label f for (part in parts) {
+                    if (Text.size(part) != 2) {
+                        if (Text.size(part) == 0) {
+                            continue f; // skip empty parts
+                        };
+                        return #err("Invalid Value: Hex bytes must start with prefix '" # prefix # "'");
+                    };
+                    let partIter = part.chars();
+                    let ?firstChar = partIter.next() else Prelude.unreachable();
+                    let ?secondChar = partIter.next() else Prelude.unreachable();
+                    inputBuffer.add(firstChar);
+                    inputBuffer.add(secondChar);
+                };
+                Buffer.toArray(inputBuffer);
+            };
+        };
 
         // Check for even length
         if (input.size() % 2 != 0) {
@@ -318,7 +380,7 @@ module {
     };
 
     // Convert number to hex character
-    public func hexCharFromNibble(value : Nat8) : ?Char {
+    public func hexCharFromNibble(value : Nat8, isUpper : Bool) : ?Char {
         let char : Char = switch (value) {
             case (0) '0';
             case (1) '1';
@@ -330,12 +392,12 @@ module {
             case (7) '7';
             case (8) '8';
             case (9) '9';
-            case (10) 'A';
-            case (11) 'B';
-            case (12) 'C';
-            case (13) 'D';
-            case (14) 'E';
-            case (15) 'F';
+            case (10) if (isUpper) 'A' else 'a';
+            case (11) if (isUpper) 'B' else 'b';
+            case (12) if (isUpper) 'C' else 'c';
+            case (13) if (isUpper) 'D' else 'd';
+            case (14) if (isUpper) 'E' else 'e';
+            case (15) if (isUpper) 'F' else 'f';
             case (_) return null;
         };
         ?char;
