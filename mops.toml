@@ -3,7 +3,7 @@ new-base = "0.3.0"
 base = "0.14.6"
 
 [package]
-name = "base-x"
+name = "base-x-encoder"
 version = "0.0.1"
 description = "A text/binary encoding library for base64, 16 (Hex), 58, etc..."
 repository = "https://github.com/edjcase/motoko_base_x"

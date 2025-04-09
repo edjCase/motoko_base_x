@@ -7,7 +7,6 @@ import Prelude "mo:base/Prelude";
 import Result "mo:new-base/Result";
 import Char "mo:new-base/Char";
 import Nat "mo:new-base/Nat";
-import Debug "mo:new-base/Debug";
 
 module {
 
