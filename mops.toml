@@ -1,13 +1,14 @@
 [dependencies]
-base = "0.11.3"
+new-base = "0.3.0"
+base = "0.14.6"
 
 [package]
-name = ""
+name = "base-x"
 version = "0.0.1"
-description = ""
-repository = "https://github.com/edjcase/"
-keywords = [  ]
+description = "A text/binary encoding library for base64, 16 (Hex), 58, etc..."
+repository = "https://github.com/edjcase/motoko_base_x"
+keywords = [ "base64", "base58", "base16", "hex", "encoding", "decoding" ]
 license = "MIT"
 
 [dev-dependencies]
-test = "2.0.0"
+test = "2.1.1"
