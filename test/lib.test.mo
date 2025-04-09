@@ -2,7 +2,6 @@ import { test } "mo:test";
 import Debug "mo:base/Debug";
 import Runtime "mo:new-base/Runtime";
 import Blob "mo:new-base/Blob";
-import Array "mo:new-base/Array";
 import Base64 "../src";
 
 test(
@@ -396,6 +395,166 @@ test(
 
     for (errorCase in errorTestCases.vals()) {
       switch (Base64.fromHex(errorCase.input, errorCase.format)) {
+        case (#ok(_)) Runtime.trap(
+          "Expected error but got success for input: " # errorCase.input
+        );
+        case (#err(e)) {
+          if (e != errorCase.expectedError) {
+            Runtime.trap(
+              "Wrong error message for input: " # errorCase.input #
+              "\nExpected: " # errorCase.expectedError #
+              "\nActual:   " # e
+            );
+          };
+        };
+      };
+    };
+  },
+);
+
+test(
+  "to/fromBase58",
+  func() {
+    let testCases : [{ input : Blob; expected : Text }] = [
+      {
+        // Empty string
+        input = "";
+        expected = "";
+      },
+      {
+        // Single byte (0)
+        input = "\00";
+        expected = "1";
+      },
+      {
+        // Multiple zeros (each 0 byte becomes a '1')
+        input = "\00\00\00";
+        expected = "111";
+      },
+      {
+        // Simple byte sequence
+        input = "\01\02\03\04";
+        expected = "2VfUX";
+      },
+      {
+        // Simple ASCII text
+        input = "Hello";
+        expected = "9Ajdvzr";
+      },
+      {
+        // Binary data with pattern
+        input = "\FF\FF\FF\FF";
+        expected = "7YXq9G";
+      },
+      {
+        // Leading zeros (important edge case in Base58)
+        input = "\00\01\02";
+        expected = "15T";
+      },
+      {
+        // All decimal digits
+        input = "0123456789";
+        expected = "3i37NcgooY8f1S";
+      },
+      {
+        // UTF-8 characters
+        input = "→★♠";
+        expected = "3tEgD35TRY3yH";
+      },
+      {
+        // Longer text
+        input = "Base58 is a binary-to-text encoding";
+        expected = "7dAJz6PtEcrpxw6yTCFjPTPbCJmQnKR4KFdpQGCtP3oHmCD4";
+      },
+      {
+        // Mix of various bytes
+        input = "\00\FF\55\AA\99";
+        expected = "17XYcn4";
+      },
+      {
+        // Bitcoin address-like input
+        input = "\00\14\7F\F0\D7\4F\38\BD\37\99\12\61\E2\E0\46\73\D1\24\A3\B8\DC";
+        expected = "1HZkFdjZaYGgrSN7bt633yn9yCXd";
+      },
+      {
+        // Binary with zeros in middle
+        input = "\01\00\00\02";
+        expected = "2UzHP";
+      },
+      {
+        // Bytes near alphabet boundaries
+        input = "\20\21\57\58";
+        expected = "pdoZH";
+      },
+    ];
+
+    for (testCase in testCases.vals()) {
+      let actual = Base64.toBase58(testCase.input.vals());
+      if (actual != testCase.expected) {
+        Debug.trap(
+          "toBase58 Failure\nValue: " # debug_show (testCase.input) #
+          "\nExpected: " # testCase.expected #
+          "\nActual:   " # actual
+        );
+      };
+
+      switch (Base64.fromBase58(actual)) {
+        case (#err(e)) Runtime.trap(
+          "Failed to decode base58 value: " # actual # ". Error: " # e
+        );
+        case (#ok(actualReverse)) {
+          let actualReverseBlob = Blob.fromArray(actualReverse);
+          if (actualReverseBlob != testCase.input) {
+            Runtime.trap(
+              "fromBase58 Failure" #
+              "\nValue: " # debug_show (actual) #
+              "\nExpected: " # debug_show (testCase.input) #
+              "\nActual:   " # debug_show (actualReverseBlob)
+            );
+          };
+        };
+      };
+    };
+
+    // Test error cases for invalid Base58 characters
+    let errorTestCases : [{
+      input : Text;
+      expectedError : Text;
+    }] = [
+      {
+        // Contains invalid character 'O' (capital o)
+        input = "O1234567";
+        expectedError = "Invalid Base58 character: 'O'";
+      },
+      {
+        // Contains invalid character '0' (zero)
+        input = "BC0DEF";
+        expectedError = "Invalid Base58 character: '0'";
+      },
+      {
+        // Contains invalid character 'I' (capital i)
+        input = "ABCID";
+        expectedError = "Invalid Base58 character: 'I'";
+      },
+      {
+        // Contains invalid character 'l' (lowercase L)
+        input = "abcl123";
+        expectedError = "Invalid Base58 character: 'l'";
+      },
+      {
+        // Contains invalid character '+' (plus)
+        input = "abc+def";
+        expectedError = "Invalid Base58 character: '+'";
+      },
+      {
+        // Contains invalid character '/' (slash)
+        input = "abc/def";
+        expectedError = "Invalid Base58 character: '/'";
+      },
+    ];
+
+    for (errorCase in errorTestCases.vals()) {
+      switch (Base64.fromBase58(errorCase.input)) {
         case (#ok(_)) Runtime.trap(
           "Expected error but got success for input: " # errorCase.input
         );

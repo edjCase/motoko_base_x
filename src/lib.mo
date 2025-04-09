@@ -7,6 +7,8 @@ import Prelude "mo:base/Prelude";
 import Result "mo:new-base/Result";
 import Char "mo:new-base/Char";
 import Nat "mo:new-base/Nat";
+import Nat16 "mo:new-base/Nat16";
+import Debug "mo:new-base/Debug";
 
 module {
 
@@ -201,6 +203,270 @@ module {
         };
 
         #ok(Buffer.toArray(buffer));
+    };
+
+    // Base58 Functions
+    public func toBase58(bytes : Iter.Iter<Nat8>) : Text {
+
+        var currentValue : Nat = 0;
+        var valueStarted = false;
+        var zeros = 0;
+        var size = 0;
+        label f for (byte in bytes) {
+            size += 1;
+            if (not valueStarted) {
+                if (byte == 0) {
+                    zeros += 1;
+                    continue f; // Skip leading zeros
+                };
+                valueStarted := true;
+            };
+            currentValue *= 256;
+            currentValue += Nat8.toNat(byte);
+        };
+
+        let characterBuffer = Buffer.Buffer<Char>(size * 2); // Conservative estimate
+        while (currentValue > 0) {
+            let remainder = currentValue % 58;
+            currentValue /= 58;
+            let ?c = base58CharFromValue(remainder) else Prelude.unreachable();
+            characterBuffer.add(c);
+        };
+        for (_ in Nat.range(0, zeros)) {
+            characterBuffer.add('1');
+        };
+        // Reverse the result
+        Buffer.reverse(characterBuffer);
+        Text.fromIter(characterBuffer.vals());
+
+        // // Count leading zeros
+        // var zeros = 0;
+        // while (zeros < bytes.size() and bytes.get(zeros) == 0) {
+        //     zeros += 1;
+        // };
+
+        // // Add leading '1's for each zero byte
+        // var result = "";
+        // for (_ in Nat.range(0, zeros)) {
+        //     result #= "1";
+        // };
+
+        // // If input is all zeros, we're done
+        // if (zeros == bytes.size()) {
+        //     return result;
+        // };
+
+        // // Create a buffer for the base58 digits
+        // let size = bytes.size() * 138 / 100 + 1; // Base58 expansion factor
+        // let digits = Buffer.Buffer<Nat8>(size);
+
+        // // Process each byte
+        // for (i in Nat.range(zeros, bytes.size())) {
+        //     var carry = Nat8.toNat(bytes.get(i));
+
+        //     // Update each existing digit
+        //     for (j in Nat.range(0, digits.size())) {
+        //         carry += 256 * Nat8.toNat(digits.get(j));
+        //         digits.put(j, Nat8.fromNat(carry % 58));
+        //         carry /= 58;
+        //     };
+
+        //     // Add new digits
+        //     while (carry > 0) {
+        //         digits.add(Nat8.fromNat(carry % 58));
+        //         carry /= 58;
+        //     };
+        // };
+
+        // // Convert digits to base58 characters
+        // var chars = Buffer.Buffer<Char>(digits.size() + zeros);
+        // for (i in Nat.range(0, digits.size())) {
+        //     let digit = digits.get(digits.size() - 1 - i); // Reverse order
+        //     let ?c = base58CharFromValue(Nat32.fromNat(Nat8.toNat(digit))) else Prelude.unreachable();
+        //     chars.add(c);
+        // };
+
+        // result #= Text.fromIter(chars.vals());
+        // return result;
+    };
+
+    public func fromBase58(text : Text) : Result.Result<[Nat8], Text> {
+        if (text.size() == 0) {
+            return #ok([]);
+        };
+
+        // Count leading '1's
+
+        // Process the characters (excluding leading '1's)
+        var currentValue : Nat = 0;
+        var zeros = 0;
+        var valueStarted = false;
+        label f for (char in text.chars()) {
+            if (not valueStarted) {
+                if (char == '1') {
+                    zeros += 1;
+                    continue f; // Skip leading '1's
+                };
+                valueStarted := true;
+            };
+            // Get value for this character
+            let ?digitValue = base58CharToValue(char) else return #err("Invalid Base58 character: '" # Char.toText(char) # "'");
+
+            // Multiply existing result by 58 and add new digit
+            currentValue *= 58;
+            currentValue += digitValue;
+        };
+
+        // Create output buffer
+        let bytes = Buffer.Buffer<Nat8>(text.size() * 2); // Conservative estimate
+
+        while (currentValue > 0) {
+            // Get the next byte
+            let byte = Nat8.fromNat(currentValue % 256);
+            bytes.add(byte);
+            currentValue /= 256;
+        };
+        // Add zeros for leading '1's - use explicit loop instead of Nat.range
+        for (_ in Nat.range(0, zeros)) {
+            bytes.add(0);
+        };
+
+        // Reverse the result
+        Buffer.reverse(bytes);
+
+        #ok(Buffer.toArray(bytes));
+    };
+
+    // Convert character to Base58 value
+    private func base58CharToValue(c : Char) : ?Nat {
+        let natValue : Nat = switch (c) {
+            case ('1') 0;
+            case ('2') 1;
+            case ('3') 2;
+            case ('4') 3;
+            case ('5') 4;
+            case ('6') 5;
+            case ('7') 6;
+            case ('8') 7;
+            case ('9') 8;
+            case ('A') 9;
+            case ('B') 10;
+            case ('C') 11;
+            case ('D') 12;
+            case ('E') 13;
+            case ('F') 14;
+            case ('G') 15;
+            case ('H') 16;
+            case ('J') 17;
+            case ('K') 18;
+            case ('L') 19;
+            case ('M') 20;
+            case ('N') 21;
+            case ('P') 22;
+            case ('Q') 23;
+            case ('R') 24;
+            case ('S') 25;
+            case ('T') 26;
+            case ('U') 27;
+            case ('V') 28;
+            case ('W') 29;
+            case ('X') 30;
+            case ('Y') 31;
+            case ('Z') 32;
+            case ('a') 33;
+            case ('b') 34;
+            case ('c') 35;
+            case ('d') 36;
+            case ('e') 37;
+            case ('f') 38;
+            case ('g') 39;
+            case ('h') 40;
+            case ('i') 41;
+            case ('j') 42;
+            case ('k') 43;
+            case ('m') 44;
+            case ('n') 45;
+            case ('o') 46;
+            case ('p') 47;
+            case ('q') 48;
+            case ('r') 49;
+            case ('s') 50;
+            case ('t') 51;
+            case ('u') 52;
+            case ('v') 53;
+            case ('w') 54;
+            case ('x') 55;
+            case ('y') 56;
+            case ('z') 57;
+            case (_) return null;
+        };
+        ?natValue;
+    };
+
+    // Convert number to Base58 character
+    public func base58CharFromValue(value : Nat) : ?Char {
+        let char : Char = switch (value) {
+            case (0) '1';
+            case (1) '2';
+            case (2) '3';
+            case (3) '4';
+            case (4) '5';
+            case (5) '6';
+            case (6) '7';
+            case (7) '8';
+            case (8) '9';
+            case (9) 'A';
+            case (10) 'B';
+            case (11) 'C';
+            case (12) 'D';
+            case (13) 'E';
+            case (14) 'F';
+            case (15) 'G';
+            case (16) 'H';
+            case (17) 'J';
+            case (18) 'K';
+            case (19) 'L';
+            case (20) 'M';
+            case (21) 'N';
+            case (22) 'P';
+            case (23) 'Q';
+            case (24) 'R';
+            case (25) 'S';
+            case (26) 'T';
+            case (27) 'U';
+            case (28) 'V';
+            case (29) 'W';
+            case (30) 'X';
+            case (31) 'Y';
+            case (32) 'Z';
+            case (33) 'a';
+            case (34) 'b';
+            case (35) 'c';
+            case (36) 'd';
+            case (37) 'e';
+            case (38) 'f';
+            case (39) 'g';
+            case (40) 'h';
+            case (41) 'i';
+            case (42) 'j';
+            case (43) 'k';
+            case (44) 'm';
+            case (45) 'n';
+            case (46) 'o';
+            case (47) 'p';
+            case (48) 'q';
+            case (49) 'r';
+            case (50) 's';
+            case (51) 't';
+            case (52) 'u';
+            case (53) 'v';
+            case (54) 'w';
+            case (55) 'x';
+            case (56) 'y';
+            case (57) 'z';
+            case (_) return null;
+        };
+        ?char;
     };
 
     // Helper function for base64 decoding
