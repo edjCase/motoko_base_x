@@ -7,8 +7,6 @@ import Prelude "mo:base/Prelude";
 import Result "mo:new-base/Result";
 import Char "mo:new-base/Char";
 import Nat "mo:new-base/Nat";
-import Nat16 "mo:new-base/Nat16";
-import Debug "mo:new-base/Debug";
 
 module {
 
@@ -27,7 +25,16 @@ module {
         #perByte : Text; // '\x' -> \xAB\xCD
     };
 
-    // Base64 Functions
+    /// Converts a byte iterator to a Base64 encoded text string.
+    ///
+    /// ```motoko
+    /// let data = [0x48, 0x65, 0x6C, 0x6C, 0x6F].vals(); // "Hello" in ASCII
+    /// let encoded = toBase64(data, false);
+    /// // encoded is "SGVsbG8="
+    ///
+    /// let uriSafe = toBase64(data, true);
+    /// // uriSafe is "SGVsbG8" (no padding, with URI safe characters)
+    /// ```
     public func toBase64(data : Iter.Iter<Nat8>, isUriSafe : Bool) : Text {
         var ret = "";
         var remain : Nat32 = 0;
@@ -69,6 +76,18 @@ module {
         ret;
     };
 
+    /// Decodes a Base64 encoded text string to an array of bytes.
+    ///
+    /// ```motoko
+    /// let base64 = "SGVsbG8="; // "Hello" in Base64
+    /// let result = fromBase64(base64);
+    /// switch (result) {
+    ///   case (#ok(bytes)) {
+    ///     // bytes is [0x48, 0x65, 0x6C, 0x6C, 0x6F] (ASCII for "Hello")
+    ///   };
+    ///   case (#err(error)) { /* Handle error */ };
+    /// };
+    /// ```
     public func fromBase64(text : Text) : Result.Result<[Nat8], Text> {
         // Remove whitespace
         let chars = Buffer.Buffer<Char>(text.size());
@@ -119,12 +138,26 @@ module {
         #ok(Buffer.toArray(output));
     };
 
-    // Hex Functions
-
+    /// Converts a byte iterator to a Base16 (hexadecimal) encoded text string.
+    /// This is the same as `toHex`
+    ///
+    /// ```motoko
+    /// let data = [0xA1, 0xB2, 0xC3].vals();
+    /// let format = { isUpper = true; prefix = #single("0x") };
+    /// let encoded : Text = toBase16(data, format);
+    /// ```
     public func toBase16(data : Iter.Iter<Nat8>, format : HexOutputFormat) : Text {
         toHex(data, format);
     };
 
+    /// Converts a byte iterator to a hexadecimal encoded text string.
+    /// This is the same as `toBase16`
+    ///
+    /// ```motoko
+    /// let data = [0xA1, 0xB2, 0xC3].vals();
+    /// let format = { isUpper = false; prefix = #perByte("\\x") };
+    /// let encoded : Text = toHex(data, format);
+    /// ```
     public func toHex(data : Iter.Iter<Nat8>, format : HexOutputFormat) : Text {
         var result = "";
         let perBytePrefix : ?Text = switch (format.prefix) {
@@ -154,10 +187,38 @@ module {
         result;
     };
 
+    /// Decodes a Base16 (hexadecimal) encoded text string to an array of bytes.
+    /// This is the same as `fromHex`
+    ///
+    /// ```motoko
+    /// let hex = "0xA1B2C3";
+    /// let format = { prefix = #single("0x") };
+    /// let result = fromBase16(hex, format);
+    /// switch (result) {
+    ///   case (#ok(bytes)) {
+    ///     ...
+    ///   };
+    ///   case (#err(error)) { /* Handle error */ };
+    /// };
+    /// ```
     public func fromBase16(base16 : Text, format : HexInputFormat) : Result.Result<[Nat8], Text> {
         fromHex(base16, format);
     };
 
+    /// Decodes a hexadecimal encoded text string to an array of bytes.
+    /// This is the same as `fromBase16`
+    ///
+    /// ```motoko
+    /// let hex = "\\xa1\\xb2\\xc3";
+    /// let format = { prefix = #perByte("\\x") };
+    /// let result = fromHex(hex, format);
+    /// switch (result) {
+    ///   case (#ok(bytes)) {
+    ///     ...
+    ///   };
+    ///   case (#err(error)) { /* Handle error */ };
+    /// };
+    /// ```
     public func fromHex(hex : Text, format : HexInputFormat) : Result.Result<[Nat8], Text> {
         let input : [Char] = switch (format.prefix) {
             case (#none) Text.toArray(hex);
@@ -205,7 +266,12 @@ module {
         #ok(Buffer.toArray(buffer));
     };
 
-    // Base58 Functions
+    /// Converts a byte iterator to a Base58 encoded text string.
+    ///
+    /// ```motoko
+    /// let data = [0x00, 0x01, 0x02].vals();
+    /// let encoded : Text = toBase58(data);
+    /// ```
     public func toBase58(bytes : Iter.Iter<Nat8>) : Text {
 
         var currentValue : Nat = 0;
@@ -238,64 +304,24 @@ module {
         // Reverse the result
         Buffer.reverse(characterBuffer);
         Text.fromIter(characterBuffer.vals());
-
-        // // Count leading zeros
-        // var zeros = 0;
-        // while (zeros < bytes.size() and bytes.get(zeros) == 0) {
-        //     zeros += 1;
-        // };
-
-        // // Add leading '1's for each zero byte
-        // var result = "";
-        // for (_ in Nat.range(0, zeros)) {
-        //     result #= "1";
-        // };
-
-        // // If input is all zeros, we're done
-        // if (zeros == bytes.size()) {
-        //     return result;
-        // };
-
-        // // Create a buffer for the base58 digits
-        // let size = bytes.size() * 138 / 100 + 1; // Base58 expansion factor
-        // let digits = Buffer.Buffer<Nat8>(size);
-
-        // // Process each byte
-        // for (i in Nat.range(zeros, bytes.size())) {
-        //     var carry = Nat8.toNat(bytes.get(i));
-
-        //     // Update each existing digit
-        //     for (j in Nat.range(0, digits.size())) {
-        //         carry += 256 * Nat8.toNat(digits.get(j));
-        //         digits.put(j, Nat8.fromNat(carry % 58));
-        //         carry /= 58;
-        //     };
-
-        //     // Add new digits
-        //     while (carry > 0) {
-        //         digits.add(Nat8.fromNat(carry % 58));
-        //         carry /= 58;
-        //     };
-        // };
-
-        // // Convert digits to base58 characters
-        // var chars = Buffer.Buffer<Char>(digits.size() + zeros);
-        // for (i in Nat.range(0, digits.size())) {
-        //     let digit = digits.get(digits.size() - 1 - i); // Reverse order
-        //     let ?c = base58CharFromValue(Nat32.fromNat(Nat8.toNat(digit))) else Prelude.unreachable();
-        //     chars.add(c);
-        // };
-
-        // result #= Text.fromIter(chars.vals());
-        // return result;
     };
 
+    /// Decodes a Base58 encoded text string to an array of bytes.
+    ///
+    /// ```motoko
+    /// let base58 = "2UzHP";
+    /// let result = fromBase58(base58);
+    /// switch (result) {
+    ///   case (#ok(bytes)) {
+    ///     ...
+    ///   };
+    ///   case (#err(error)) { /* Handle error */ };
+    /// };
+    /// ```
     public func fromBase58(text : Text) : Result.Result<[Nat8], Text> {
         if (text.size() == 0) {
             return #ok([]);
         };
-
-        // Count leading '1's
 
         // Process the characters (excluding leading '1's)
         var currentValue : Nat = 0;
@@ -403,8 +429,7 @@ module {
         ?natValue;
     };
 
-    // Convert number to Base58 character
-    public func base58CharFromValue(value : Nat) : ?Char {
+    private func base58CharFromValue(value : Nat) : ?Char {
         let char : Char = switch (value) {
             case (0) '1';
             case (1) '2';
@@ -548,8 +573,7 @@ module {
         ?natValue;
     };
 
-    // Convert number to base64 character
-    public func base64CharFromValue(value : Nat32, isUriSafe : Bool) : ?Char {
+    private func base64CharFromValue(value : Nat32, isUriSafe : Bool) : ?Char {
         let char : Char = switch (value) {
             case (0) 'A';
             case (1) 'B';
@@ -644,8 +668,7 @@ module {
         ?natValue;
     };
 
-    // Convert number to hex character
-    public func hexCharFromNibble(value : Nat8, isUpper : Bool) : ?Char {
+    private func hexCharFromNibble(value : Nat8, isUpper : Bool) : ?Char {
         let char : Char = switch (value) {
             case (0) '0';
             case (1) '1';
@@ -667,5 +690,4 @@ module {
         };
         ?char;
     };
-
 };
