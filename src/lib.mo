@@ -521,154 +521,40 @@ module {
         ?char;
     };
 
+    let charToValueTable : [?Nat32] = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, ?62, null, ?62, null, ?63, ?52, ?53, ?54, ?55, ?56, ?57, ?58, ?59, ?60, ?61, null, null, null, null, null, null, null, ?0, ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, null, null, null, null, ?63, null, ?26, ?27, ?28, ?29, ?30, ?31, ?32, ?33, ?34, ?35, ?36, ?37, ?38, ?39, ?40, ?41, ?42, ?43, ?44, ?45, ?46, ?47, ?48, ?49, ?50, ?51];
+
     // Helper function for base64 decoding
     private func base64CharToValue(c : Char) : ?Nat32 {
-        let natValue : Nat32 = switch (c) {
-            case ('A') 0;
-            case ('B') 1;
-            case ('C') 2;
-            case ('D') 3;
-            case ('E') 4;
-            case ('F') 5;
-            case ('G') 6;
-            case ('H') 7;
-            case ('I') 8;
-            case ('J') 9;
-            case ('K') 10;
-            case ('L') 11;
-            case ('M') 12;
-            case ('N') 13;
-            case ('O') 14;
-            case ('P') 15;
-            case ('Q') 16;
-            case ('R') 17;
-            case ('S') 18;
-            case ('T') 19;
-            case ('U') 20;
-            case ('V') 21;
-            case ('W') 22;
-            case ('X') 23;
-            case ('Y') 24;
-            case ('Z') 25;
-
-            case ('a') 26;
-            case ('b') 27;
-            case ('c') 28;
-            case ('d') 29;
-            case ('e') 30;
-            case ('f') 31;
-            case ('g') 32;
-            case ('h') 33;
-            case ('i') 34;
-            case ('j') 35;
-            case ('k') 36;
-            case ('l') 37;
-            case ('m') 38;
-            case ('n') 39;
-            case ('o') 40;
-            case ('p') 41;
-            case ('q') 42;
-            case ('r') 43;
-            case ('s') 44;
-            case ('t') 45;
-            case ('u') 46;
-            case ('v') 47;
-            case ('w') 48;
-            case ('x') 49;
-            case ('y') 50;
-            case ('z') 51;
-
-            case ('0') 52;
-            case ('1') 53;
-            case ('2') 54;
-            case ('3') 55;
-            case ('4') 56;
-            case ('5') 57;
-            case ('6') 58;
-            case ('7') 59;
-            case ('8') 60;
-            case ('9') 61;
-
-            case ('+') 62;
-            case ('/') 63;
-            case ('-') 62; // URI-safe alternative to '+'
-            case ('_') 63; // URI-safe alternative to '/'
-            case ('=') 0; // Padding character
-
-            case (_) return null;
+        if (c == '=') {
+            return ?0; // Padding character
         };
-        ?natValue;
+
+        let charCode = Nat32.toNat(Char.toNat32(c));
+        if (charCode >= charToValueTable.size()) {
+            return null;
+        };
+        charToValueTable[charCode];
     };
+    // Standard base64 character lookup table (values 0-63)
+    let valueToCharTable : [Char] = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'];
+
+    // URI-safe version table (only different at positions 62 and 63)
+    let valueToCharTableUriSafe : [Char] = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '_'];
 
     private func base64CharFromValue(value : Nat32, isUriSafe : Bool) : ?Char {
-        let char : Char = switch (value) {
-            case (0) 'A';
-            case (1) 'B';
-            case (2) 'C';
-            case (3) 'D';
-            case (4) 'E';
-            case (5) 'F';
-            case (6) 'G';
-            case (7) 'H';
-            case (8) 'I';
-            case (9) 'J';
-            case (10) 'K';
-            case (11) 'L';
-            case (12) 'M';
-            case (13) 'N';
-            case (14) 'O';
-            case (15) 'P';
-            case (16) 'Q';
-            case (17) 'R';
-            case (18) 'S';
-            case (19) 'T';
-            case (20) 'U';
-            case (21) 'V';
-            case (22) 'W';
-            case (23) 'X';
-            case (24) 'Y';
-            case (25) 'Z';
-            case (26) 'a';
-            case (27) 'b';
-            case (28) 'c';
-            case (29) 'd';
-            case (30) 'e';
-            case (31) 'f';
-            case (32) 'g';
-            case (33) 'h';
-            case (34) 'i';
-            case (35) 'j';
-            case (36) 'k';
-            case (37) 'l';
-            case (38) 'm';
-            case (39) 'n';
-            case (40) 'o';
-            case (41) 'p';
-            case (42) 'q';
-            case (43) 'r';
-            case (44) 's';
-            case (45) 't';
-            case (46) 'u';
-            case (47) 'v';
-            case (48) 'w';
-            case (49) 'x';
-            case (50) 'y';
-            case (51) 'z';
-            case (52) '0';
-            case (53) '1';
-            case (54) '2';
-            case (55) '3';
-            case (56) '4';
-            case (57) '5';
-            case (58) '6';
-            case (59) '7';
-            case (60) '8';
-            case (61) '9';
-            case (62) if (isUriSafe) '-' else '+';
-            case (63) if (isUriSafe) '_' else '/';
-            case (_) return null;
+        if (value >= 64) {
+            return null;
         };
-        ?char;
+
+        // Convert to Nat for array indexing
+        let index = Nat32.toNat(value);
+
+        // Use the appropriate lookup table based on isUriSafe
+        if (isUriSafe) {
+            return ?valueToCharTableUriSafe[index];
+        } else {
+            return ?valueToCharTable[index];
+        };
     };
 
     // Helper function for hex conversion
