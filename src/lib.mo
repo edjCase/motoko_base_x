@@ -2,11 +2,15 @@ import Text "mo:new-base/Text";
 import Iter "mo:new-base/Iter";
 import Nat8 "mo:new-base/Nat8";
 import Nat32 "mo:new-base/Nat32";
-import Buffer "mo:base/Buffer";
 import Prelude "mo:base/Prelude";
+import Buffer "mo:base/Buffer";
 import Result "mo:new-base/Result";
 import Char "mo:new-base/Char";
 import Nat "mo:new-base/Nat";
+import List "mo:new-base/List";
+import Array "mo:new-base/Array";
+import VarArray "mo:new-base/VarArray";
+import Prim "mo:⛔";
 
 module {
 
@@ -90,29 +94,29 @@ module {
     /// ```
     public func fromBase64(text : Text) : Result.Result<[Nat8], Text> {
         // Remove whitespace
-        let chars = Buffer.Buffer<Char>(text.size());
+        let chars = List.empty<Char>();
         for (c in text.chars()) {
             if (c != ' ' and c != '\n') {
-                chars.add(c);
+                List.add(chars, c);
             };
         };
 
-        while (chars.size() % 4 != 0) {
-            chars.add('='); // Add padding if not a multiple of 4
+        while (List.size(chars) % 4 != 0) {
+            List.add(chars, '='); // Add padding if not a multiple of 4
         };
-        let cleanInput = Buffer.toArray(chars);
-
-        let output = Buffer.Buffer<Nat8>((cleanInput.size() * 3) / 4);
+        let charCount = List.size(chars);
+        let byteArray = VarArray.repeat<Nat8>(0, (charCount * 3) / 4);
 
         // Process in blocks of 4 characters
-        for (i in Nat.range(0, cleanInput.size() / 4)) {
+        var iByte = 0;
+        for (i in Nat.range(0, charCount / 4)) {
             let blockStart = i * 4;
 
             // Get the 4 characters in this block
-            let c1 = cleanInput[blockStart];
-            let c2 = cleanInput[blockStart + 1];
-            let c3 = cleanInput[blockStart + 2];
-            let c4 = cleanInput[blockStart + 3];
+            let c1 = List.get(chars, blockStart);
+            let c2 = List.get(chars, blockStart + 1);
+            let c3 = List.get(chars, blockStart + 2);
+            let c4 = List.get(chars, blockStart + 3);
             if (c1 == '=' or c2 == '=') {
                 return #err("Invalid Base64 string: Padding character '=' found in the middle of the string");
             };
@@ -124,18 +128,41 @@ module {
             let ?v4 = base64CharToValue(c4) else return #err("Invalid Base64 string: Invalid character '" # Char.toText(c4) # "' at position " # Nat.toText(blockStart + 3));
 
             // Combine values into bytes
-            output.add(Nat8.fromNat(Nat32.toNat((v1 << 2) | (v2 >> 4))));
+
+            // Old, without Prim.explodeNat32
+            // byteArray[iByte] := Nat8.fromNat(Nat32.toNat((v1 << 2) | (v2 >> 4)));
+            // iByte += 1;
+
+            // if (c3 != '=') {
+            //     byteArray[iByte] := Nat8.fromNat(Nat32.toNat(((v2 & 0xF) << 4) | (v3 >> 2)));
+            //     iByte += 1;
+
+            //     if (c4 != '=') {
+            //         byteArray[iByte] := Nat8.fromNat(Nat32.toNat(((v3 & 0x3) << 6) | v4));
+            //         iByte += 1;
+            //     };
+            // };
+
+            let buffer : Nat32 = (v1 << 18) + (v2 << 12) + (v3 << 6) + v4;
+            let (_, b1, b2, b3) = Prim.explodeNat32(buffer);
+            // Combine values into bytes
+            byteArray[iByte] := b1;
+            iByte += 1;
 
             if (c3 != '=') {
-                output.add(Nat8.fromNat(Nat32.toNat(((v2 & 0xF) << 4) | (v3 >> 2))));
+                byteArray[iByte] := b2;
+                iByte += 1;
 
                 if (c4 != '=') {
-                    output.add(Nat8.fromNat(Nat32.toNat(((v3 & 0x3) << 6) | v4)));
+                    byteArray[iByte] := b3;
+                    iByte += 1;
                 };
             };
+
         };
 
-        #ok(Buffer.toArray(output));
+        #ok(VarArray.sliceToArray(byteArray, 0, iByte));
+
     };
 
     /// Converts a byte iterator to a Base16 (hexadecimal) encoded text string.
@@ -251,7 +278,7 @@ module {
             return #err("Invalid Value: Hex string must have an even length");
         };
 
-        let buffer = Buffer.Buffer<Nat8>(input.size() / 2);
+        let bytes = VarArray.repeat<Nat8>(0, input.size() / 2);
 
         var i = 0;
         while (i < input.size()) {
@@ -259,11 +286,11 @@ module {
             let ?lowNibble = hexCharToNibble(input[i + 1]) else return #err("Invalid Value: Invalid hex character '" # Char.toText(input[i + 1]) # "' at position " # Nat.toText(i + 1));
 
             let byte = highNibble * 16 + lowNibble;
-            buffer.add(byte);
+            bytes[i / 2] := byte;
             i += 2;
         };
 
-        #ok(Buffer.toArray(buffer));
+        #ok(Array.fromVarArray(bytes));
     };
 
     /// Converts a byte iterator to a Base58 encoded text string.
