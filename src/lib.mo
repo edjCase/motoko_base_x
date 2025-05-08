@@ -330,8 +330,7 @@ module {
         let b58 = VarArray.repeat<Nat32>(0, size * 2);
         var b58Size = 0;
 
-        // OPTIMIZATION: Use precomputed powers to avoid overflow
-        let powers : [Nat32] = [1, 256, 65536, 16777216]; // 256^0, 256^1, 256^2, 256^3
+        let shifts : [Nat32] = [0, 8, 16, 24]; // Shift amounts for 256^0, 256^1, 256^2, 256^3
 
         // Process bytes in batches of up to 3 (not 4!) to avoid overflow
         var i = zeros;
@@ -350,7 +349,7 @@ module {
             while (j < b58Size or combined > 0) {
                 if (j < b58Size) {
                     // Use precomputed power value to avoid overflow
-                    combined += b58[j] * powers[batchSize];
+                    combined += b58[j] << shifts[batchSize];
                 };
 
                 b58[j] := combined % 58;
