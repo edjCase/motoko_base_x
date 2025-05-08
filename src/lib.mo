@@ -330,33 +330,41 @@ module {
             return result;
         };
 
-        // Preallocate the work buffer to avoid reallocations
-        // Size estimation: each byte expands to at most 1.4 Base58 chars
+        // Preallocate the work buffer
         let b58 = VarArray.repeat<Nat32>(0, size * 2);
         var b58Size = 0;
 
-        // Process each non-zero byte
-        for (i in Nat.range(zeros, size)) {
-            var carry = Nat16.toNat32(Nat8.toNat16(bytesArray[i]));
-            var j = 0;
+        // OPTIMIZATION: Use precomputed powers to avoid overflow
+        let powers : [Nat32] = [1, 256, 65536, 16777216]; // 256^0, 256^1, 256^2, 256^3
 
-            // Apply carry to existing digits
-            while (j < b58Size or carry > 0) {
+        // Process bytes in batches of up to 3 (not 4!) to avoid overflow
+        var i = zeros;
+        while (i < size) {
+            // Process up to 3 bytes at once (not 4) to avoid Nat32 overflow
+            var batchSize = Nat.min(3, size - i);
+
+            // Combine bytes into a single value
+            var combined : Nat32 = 0;
+            for (j in Nat.range(0, batchSize)) {
+                combined := combined * 256 + Nat32.fromNat(Nat8.toNat(bytesArray[i + j]));
+            };
+
+            var j = 0;
+            // Apply the combined value to existing digits
+            while (j < b58Size or combined > 0) {
                 if (j < b58Size) {
-                    carry += b58[j] * 256;
+                    // Use precomputed power value to avoid overflow
+                    combined += b58[j] * powers[batchSize];
                 };
 
-                // Replace expensive modulo with division + multiplication + subtraction
-                let quotient : Nat32 = carry / 58;
-                let remainder : Nat32 = carry - quotient * 58; // Mathematically equivalent to carry % 58
-
-                b58[j] := remainder;
-                carry := quotient; // Replace division with assignment of already calculated value
+                b58[j] := combined % 58;
+                combined := combined / 58;
 
                 j += 1;
             };
 
             b58Size := j;
+            i += batchSize;
         };
 
         // Create result buffer
