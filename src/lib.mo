@@ -11,6 +11,7 @@ import List "mo:new-base/List";
 import Array "mo:new-base/Array";
 import VarArray "mo:new-base/VarArray";
 import Runtime "mo:new-base/Runtime";
+import Nat16 "mo:new-base/Nat16";
 import Prim "mo:⛔";
 
 module {
@@ -301,37 +302,79 @@ module {
     /// let encoded : Text = toBase58(data);
     /// ```
     public func toBase58(bytes : Iter.Iter<Nat8>) : Text {
+        // Convert to array for easier processing
+        let bytesArray = Iter.toArray(bytes);
+        let size = bytesArray.size();
 
-        var currentValue : Nat = 0;
-        var valueStarted = false;
+        // Handle empty input
+        if (size == 0) {
+            return "";
+        };
+
+        // Count leading zeros
         var zeros = 0;
-        var size = 0;
-        label f for (byte in bytes) {
-            size += 1;
-            if (not valueStarted) {
-                if (byte == 0) {
-                    zeros += 1;
-                    continue f; // Skip leading zeros
-                };
-                valueStarted := true;
+        label f for (i in Nat.range(0, size)) {
+            if (bytesArray[i] == 0) {
+                zeros += 1;
+            } else {
+                break f;
             };
-            currentValue *= 256;
-            currentValue += Nat8.toNat(byte);
         };
 
-        let characterBuffer = Buffer.Buffer<Char>(size * 2); // Conservative estimate
-        while (currentValue > 0) {
-            let remainder = currentValue % 58;
-            currentValue /= 58;
-            let ?c = base58CharFromValue(remainder) else Prelude.unreachable();
-            characterBuffer.add(c);
+        // If input is all zeros, return all '1's
+        if (zeros == size) {
+            var result = "";
+            for (_ in Nat.range(0, zeros)) {
+                result #= "1";
+            };
+            return result;
         };
+
+        // Preallocate the work buffer to avoid reallocations
+        // Size estimation: each byte expands to at most 1.4 Base58 chars
+        let b58 = VarArray.repeat<Nat32>(0, size * 2);
+        var b58Size = 0;
+
+        // Process each non-zero byte
+        for (i in Nat.range(zeros, size)) {
+            var carry = Nat16.toNat32(Nat8.toNat16(bytesArray[i]));
+            var j = 0;
+
+            // Apply carry to existing digits
+            while (j < b58Size or carry > 0) {
+                if (j < b58Size) {
+                    carry += b58[j] * 256;
+                };
+
+                // Replace expensive modulo with division + multiplication + subtraction
+                let quotient : Nat32 = carry / 58;
+                let remainder : Nat32 = carry - quotient * 58; // Mathematically equivalent to carry % 58
+
+                b58[j] := remainder;
+                carry := quotient; // Replace division with assignment of already calculated value
+
+                j += 1;
+            };
+
+            b58Size := j;
+        };
+
+        // Create result buffer
+        let result = Buffer.Buffer<Char>(size * 2);
+
+        // Add leading '1's for zeros
         for (_ in Nat.range(0, zeros)) {
-            characterBuffer.add('1');
+            result.add('1');
         };
-        // Reverse the result
-        Buffer.reverse(characterBuffer);
-        Text.fromIter(characterBuffer.vals());
+
+        // Add the encoded characters in reverse order
+        for (i in Nat.range(0, b58Size)) {
+            let index : Nat = b58Size - 1 - i;
+            let ?c = base58CharFromValue(Nat32.toNat(b58[index])) else Prelude.unreachable();
+            result.add(c);
+        };
+
+        return Text.fromIter(result.vals());
     };
 
     /// Decodes a Base58 encoded text string to an array of bytes.
@@ -401,11 +444,9 @@ module {
     private func base58CharToValue(c : Char) : ?Nat {
         let charCode = Nat32.toNat(Char.toNat32(c));
         if (charCode >= base58CharToValueTable.size()) {
-            Runtime.trap("Invalid Base58 character: " # Char.toText(c) # " at position " # Nat.toText(charCode));
             return null;
         };
-        let ?a = base58CharToValueTable[charCode] else Runtime.trap("Invalid Base58 character: " # Char.toText(c) # " at position " # Nat.toText(charCode));
-        ?a;
+        base58CharToValueTable[charCode];
     };
 
     // Optimized function for Base58 value to character conversion
