@@ -362,22 +362,19 @@ module {
             i += batchSize;
         };
 
-        // Create result buffer
-        let result = Buffer.Buffer<Char>(size * 2);
-
-        // Add leading '1's for zeros
-        for (_ in Nat.range(0, zeros)) {
-            result.add('1');
-        };
-
-        // Add the encoded characters in reverse order
-        for (i in Nat.range(0, b58Size)) {
-            let index : Nat = b58Size - 1 - i;
-            let ?c = base58CharFromValue(Nat32.toNat(b58[index])) else Prelude.unreachable();
-            result.add(c);
-        };
-
-        return Text.fromIter(result.vals());
+        Nat.range(0, b58Size + zeros)
+        |> Iter.map<Nat, Char>(
+            _,
+            func(i : Nat) : Char {
+                if (i < zeros) {
+                    return '1'; // Leading zeros are represented as '1's
+                };
+                let index : Nat = b58Size - 1 - (i - zeros);
+                let ?c = base58CharFromValue(Nat32.toNat(b58[index])) else Prelude.unreachable();
+                c;
+            },
+        )
+        |> Text.fromIter(_);
     };
 
     /// Decodes a Base58 encoded text string to an array of bytes.
