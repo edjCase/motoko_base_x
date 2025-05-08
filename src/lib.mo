@@ -342,7 +342,7 @@ module {
             // Combine bytes into a single value
             var combined : Nat32 = 0;
             for (j in Nat.range(0, batchSize)) {
-                combined := combined * 256 + Nat32.fromNat(Nat8.toNat(bytesArray[i + j]));
+                combined := (combined << 8) + Nat32.fromNat(Nat8.toNat(bytesArray[i + j]));
             };
 
             var j = 0;
