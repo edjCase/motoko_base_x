@@ -313,12 +313,8 @@ module {
 
         // Count leading zeros
         var zeros = 0;
-        label f for (i in Nat.range(0, size)) {
-            if (bytesArray[i] == 0) {
-                zeros += 1;
-            } else {
-                break f;
-            };
+        while (zeros < size and bytesArray[zeros] == 0) {
+            zeros += 1;
         };
 
         // If input is all zeros, return all '1's
