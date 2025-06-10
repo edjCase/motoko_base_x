@@ -31,11 +31,11 @@ module {
                     };
                 } else if (row == "toBase64") {
                     for (i in Iter.range(1, n)) {
-                        ignore BaseX.toBase64(byteTestData.vals(), false);
+                        ignore BaseX.toBase64(byteTestData.vals(), #standard);
                     };
                 } else if (row == "toBase64UriSafe") {
                     for (i in Iter.range(1, n)) {
-                        ignore BaseX.toBase64(byteTestData.vals(), true);
+                        ignore BaseX.toBase64(byteTestData.vals(), #url);
                     };
                 } else if (row == "fromBase16") {
                     for (i in Iter.range(1, n)) {

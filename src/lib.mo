@@ -10,8 +10,6 @@ import Nat "mo:new-base/Nat";
 import List "mo:new-base/List";
 import Array "mo:new-base/Array";
 import VarArray "mo:new-base/VarArray";
-import Runtime "mo:new-base/Runtime";
-import Nat16 "mo:new-base/Nat16";
 import Prim "mo:⛔";
 
 module {
@@ -31,21 +29,95 @@ module {
         #perByte : Text; // '\x' -> \xAB\xCD
     };
 
+    public type Base64OutputFormat = {
+        #standard;
+        #url;
+        #urlWithPadding;
+    };
+
+    public type Base32OutputFormat = {
+        #standard : { isUpper : Bool }; // RFC 4648, A-Z + 2-7, with padding
+        #extendedHex : { isUpper : Bool }; // RFC 4648, 0-9 + A-V, with padding
+    };
+
+    /// Converts a byte iterator to a Base32 encoded text string.
+    ///
+    /// ```motoko
+    /// let data = [0x48, 0x65, 0x6C, 0x6C, 0x6F].vals(); // "Hello" in ASCII
+    /// let encoded = toBase32(data, #standard({ isUpper = true }));
+    /// // encoded is "JBSWY3DPEBLW64TMMQ======"
+    ///
+    /// let extHex = toBase32(data, #extendedHex({ isUpper = false }));
+    /// // extHex is "91imor3f41bmsrjccg======"
+    /// ```
+    public func toBase32(data : Iter.Iter<Nat8>, format : Base32OutputFormat) : Text {
+        var ret = "";
+        var buffer : Nat32 = 0;
+        var bitsInBuffer : Nat32 = 0;
+        var totalBits = 0;
+
+        // Determine character set based on format
+        let charTable = switch (format) {
+            case (#standard({ isUpper })) if (isUpper) base32StandardUpperCharTable else base32StandardLowerCharTable;
+            case (#extendedHex({ isUpper })) if (isUpper) base32ExtendedHexUpperCharTable else base32ExtendedHexLowerCharTable;
+        };
+
+        for (byte in data) {
+            totalBits += 8;
+
+            // Add byte to buffer
+            buffer := (buffer << 8) | Nat32.fromNat(Nat8.toNat(byte));
+            bitsInBuffer += 8;
+
+            // Extract 5-bit chunks while we have enough bits
+            while (bitsInBuffer >= 5) {
+                let index = (buffer >> (bitsInBuffer - 5)) & 0x1f; // Extract top 5 bits
+                ret #= Char.toText(charTable[Nat32.toNat(index)]);
+                bitsInBuffer -= 5;
+            };
+        };
+
+        // Handle remaining bits (less than 5)
+        if (bitsInBuffer > 0) {
+            let index = (buffer << (5 - bitsInBuffer)) & 0x1f; // Left-pad with zeros
+            ret #= Char.toText(charTable[Nat32.toNat(index)]);
+        };
+
+        // Add padding to make total length a multiple of 8
+        let outputLength = ret.size();
+        let paddingNeeded : Nat = (8 - (outputLength % 8)) % 8;
+        for (_ in Nat.range(0, paddingNeeded)) {
+            ret #= "=";
+        };
+
+        ret;
+    };
+
     /// Converts a byte iterator to a Base64 encoded text string.
     ///
     /// ```motoko
     /// let data = [0x48, 0x65, 0x6C, 0x6C, 0x6F].vals(); // "Hello" in ASCII
-    /// let encoded = toBase64(data, false);
+    /// let encoded = toBase64(data, {isUriSafe = false, includePadding = true});
     /// // encoded is "SGVsbG8="
     ///
-    /// let uriSafe = toBase64(data, true);
+    /// let uriSafe = toBase64(data, {isUriSafe = true, includePadding = false});
     /// // uriSafe is "SGVsbG8" (no padding, with URI safe characters)
     /// ```
-    public func toBase64(data : Iter.Iter<Nat8>, isUriSafe : Bool) : Text {
+    public func toBase64(data : Iter.Iter<Nat8>, format : Base64OutputFormat) : Text {
         var ret = "";
         var remain : Nat32 = 0;
         var bits : Nat32 = 0;
         var bitcount = 0;
+        let isUriSafe = switch (format) {
+            case (#standard) false;
+            case (#url) true;
+            case (#urlWithPadding) true;
+        };
+        let includePadding = switch (format) {
+            case (#standard) true;
+            case (#url) false;
+            case (#urlWithPadding) true;
+        };
 
         for (byte in data) {
             bitcount += 8;
@@ -71,8 +143,8 @@ module {
             ret #= Char.toText(base64Char);
         };
 
-        // Add padding for standard Base64
-        if (not isUriSafe) {
+        // Add padding =
+        if (includePadding) {
             let extraBytes = bitcount % 3;
             if (extraBytes > 0) {
                 for (_ in Nat.range(0, extraBytes)) ret #= "=";
@@ -130,20 +202,6 @@ module {
             let ?v4 = base64CharToValue(c4) else return #err("Invalid Base64 string: Invalid character '" # Char.toText(c4) # "' at position " # Nat.toText(blockStart + 3));
 
             // Combine values into bytes
-
-            // Old, without Prim.explodeNat32
-            // byteArray[iByte] := Nat8.fromNat(Nat32.toNat((v1 << 2) | (v2 >> 4)));
-            // iByte += 1;
-
-            // if (c3 != '=') {
-            //     byteArray[iByte] := Nat8.fromNat(Nat32.toNat(((v2 & 0xF) << 4) | (v3 >> 2)));
-            //     iByte += 1;
-
-            //     if (c4 != '=') {
-            //         byteArray[iByte] := Nat8.fromNat(Nat32.toNat(((v3 & 0x3) << 6) | v4));
-            //         iByte += 1;
-            //     };
-            // };
 
             let buffer : Nat32 = (v1 << 18) + (v2 << 12) + (v3 << 6) + v4;
             let (_, b1, b2, b3) = Prim.explodeNat32(buffer);
@@ -433,6 +491,149 @@ module {
 
         #ok(Buffer.toArray(bytes));
     };
+
+    // Base32 standard character table (A-Z, 2-7)
+    let base32StandardUpperCharTable : [Char] = [
+        'A',
+        'B',
+        'C',
+        'D',
+        'E',
+        'F',
+        'G',
+        'H',
+        'I',
+        'J',
+        'K',
+        'L',
+        'M',
+        'N',
+        'O',
+        'P',
+        'Q',
+        'R',
+        'S',
+        'T',
+        'U',
+        'V',
+        'W',
+        'X',
+        'Y',
+        'Z',
+        '2',
+        '3',
+        '4',
+        '5',
+        '6',
+        '7',
+    ];
+
+    let base32StandardLowerCharTable : [Char] = [
+        'a',
+        'b',
+        'c',
+        'd',
+        'e',
+        'f',
+        'g',
+        'h',
+        'i',
+        'j',
+        'k',
+        'l',
+        'm',
+        'n',
+        'o',
+        'p',
+        'q',
+        'r',
+        's',
+        't',
+        'u',
+        'v',
+        'w',
+        'x',
+        'y',
+        'z',
+        '2',
+        '3',
+        '4',
+        '5',
+        '6',
+        '7',
+    ];
+
+    // Base32 extended hex character table (0-9, A-V)
+    let base32ExtendedHexUpperCharTable : [Char] = [
+        '0',
+        '1',
+        '2',
+        '3',
+        '4',
+        '5',
+        '6',
+        '7',
+        '8',
+        '9',
+        'A',
+        'B',
+        'C',
+        'D',
+        'E',
+        'F',
+        'G',
+        'H',
+        'I',
+        'J',
+        'K',
+        'L',
+        'M',
+        'N',
+        'O',
+        'P',
+        'Q',
+        'R',
+        'S',
+        'T',
+        'U',
+        'V',
+    ];
+
+    let base32ExtendedHexLowerCharTable : [Char] = [
+        '0',
+        '1',
+        '2',
+        '3',
+        '4',
+        '5',
+        '6',
+        '7',
+        '8',
+        '9',
+        'a',
+        'b',
+        'c',
+        'd',
+        'e',
+        'f',
+        'g',
+        'h',
+        'i',
+        'j',
+        'k',
+        'l',
+        'm',
+        'n',
+        'o',
+        'p',
+        'q',
+        'r',
+        's',
+        't',
+        'u',
+        'v',
+    ];
+
     // Precomputed lookup table for Base58 character to value conversion (index = ASCII value, value = Base58 value or null)
     // Base58 character to value table (123 elements)
     let base58CharToValueTable : [?Nat] = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, ?0, ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, null, null, null, null, null, null, null, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, null, ?17, ?18, ?19, ?20, ?21, null, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30, ?31, ?32, null, null, null, null, null, null, ?33, ?34, ?35, ?36, ?37, ?38, ?39, ?40, ?41, ?42, ?43, null, ?44, ?45, ?46, ?47, ?48, ?49, ?50, ?51, ?52, ?53, ?54, ?55, ?56, ?57];
