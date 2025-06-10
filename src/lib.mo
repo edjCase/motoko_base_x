@@ -10,6 +10,7 @@ import Nat "mo:new-base/Nat";
 import List "mo:new-base/List";
 import Array "mo:new-base/Array";
 import VarArray "mo:new-base/VarArray";
+import Nat64 "mo:new-base/Nat64";
 import Prim "mo:⛔";
 
 module {
@@ -40,15 +41,20 @@ module {
         #extendedHex : { isUpper : Bool }; // RFC 4648, 0-9 + A-V, with padding
     };
 
+    public type Base32InputFormat = {
+        #standard; // RFC 4648, A-Z + 2-7, with padding
+        #extendedHex; // RFC 4648, 0-9 + A-V, with padding
+    };
+
     /// Converts a byte iterator to a Base32 encoded text string.
     ///
     /// ```motoko
     /// let data = [0x48, 0x65, 0x6C, 0x6C, 0x6F].vals(); // "Hello" in ASCII
     /// let encoded = toBase32(data, #standard({ isUpper = true }));
-    /// // encoded is "JBSWY3DPEBLW64TMMQ======"
+    /// // encoded is "JBSWY3DP"
     ///
     /// let extHex = toBase32(data, #extendedHex({ isUpper = false }));
-    /// // extHex is "91imor3f41bmsrjccg======"
+    /// // extHex is "91imor3f"
     /// ```
     public func toBase32(data : Iter.Iter<Nat8>, format : Base32OutputFormat) : Text {
         var ret = "";
@@ -91,6 +97,117 @@ module {
         };
 
         ret;
+    };
+
+    /// Decodes a Base32 encoded text string to an array of bytes.
+    ///
+    /// ```motoko
+    /// let base32 = "MZXW6YTBOI======"; // "foobar" in Base32
+    /// let result = fromBase32(base32, #standard({ isUpper = true }));
+    /// switch (result) {
+    ///   case (#ok(bytes)) {
+    ///     // bytes is [0x66, 0x6F, 0x6F, 0x62, 0x61, 0x72] (ASCII for "foobar")
+    ///   };
+    ///   case (#err(error)) { /* Handle error */ };
+    /// };
+    /// ```
+    public func fromBase32(text : Text, format : Base32InputFormat) : Result.Result<[Nat8], Text> {
+        if (text.size() == 0) {
+            return #ok([]);
+        };
+
+        // Remove whitespace
+        let chars = Buffer.Buffer<Char>(text.size());
+        for (c in text.chars()) {
+            if (c != ' ' and c != '\n' and c != '\r' and c != '\t') {
+                chars.add(c);
+            };
+        };
+
+        let charCount = chars.size();
+
+        // Base32 strings must be multiples of 8 characters (with padding)
+        if (charCount % 8 != 0) {
+            return #err("Invalid Base32 string: Length must be a multiple of 8 characters");
+        };
+
+        // Determine which lookup table to use
+        let charToValueTable = switch (format) {
+            case (#standard(_)) base32StandardCharToValueTable;
+            case (#extendedHex(_)) base32ExtendedHexCharToValueTable;
+        };
+
+        // Calculate output size (5 bytes per 8 input characters, adjusted for padding)
+        let maxOutputSize = (charCount * 5) / 8;
+        let byteArray = VarArray.repeat<Nat8>(0, maxOutputSize);
+
+        var iByte = 0;
+        var i = 0;
+
+        // Process in blocks of 8 characters
+        while (i < charCount) {
+            let blockStart = i;
+
+            // Get the 8 characters in this block
+            var values : [var Nat32] = VarArray.tabulate<Nat32>(8, func(_) { 0 });
+            var paddingCount = 0;
+            var paddingStarted = false;
+
+            for (j in Nat.range(0, 8)) {
+                let char = chars.get(blockStart + j);
+
+                if (char == '=') {
+                    if (not paddingStarted) {
+                        paddingStarted := true;
+                    };
+                    paddingCount += 1;
+                    values[j] := 0; // Padding value
+                } else {
+                    if (paddingStarted) {
+                        return #err("Invalid Base32 string: Padding character '=' found in the middle of the string");
+                    };
+
+                    let ?value = base32CharToValue(char, charToValueTable) else {
+                        return #err("Invalid Base32 character: '" # Char.toText(char) # "'");
+                    };
+                    values[j] := value;
+                };
+            };
+
+            // Validate padding count
+            switch (paddingCount) {
+                case (0 or 1 or 3 or 4 or 6) (); // Valid padding counts
+                case (_) return #err("Invalid Base32 string: Invalid padding count of " # Nat.toText(paddingCount));
+            };
+
+            // Convert 8 5-bit values to 5 bytes
+            // Combine all values into a single 40-bit buffer
+            var buffer : Nat64 = 0;
+            for (j in Nat.range(0, 8)) {
+                buffer := (buffer << 5) | Nat64.fromNat(Nat32.toNat(values[j]));
+            };
+
+            // Extract bytes based on padding
+            let bytesToExtract : Nat64 = switch (paddingCount) {
+                case (0) 5; // No padding - all 5 bytes
+                case (1) 4; // 1 padding char - 4 bytes
+                case (3) 3; // 3 padding chars - 3 bytes
+                case (4) 2; // 4 padding chars - 2 bytes
+                case (6) 1; // 6 padding chars - 1 byte
+                case (_) return #err("Invalid Base32 string: Too much padding");
+            };
+
+            // Extract bytes from the buffer (from most significant to least)
+            for (j in Nat64.range(0, bytesToExtract)) {
+                let byteValue = Nat64.toNat((buffer >> (32 - j * 8)) & 0xFF);
+                byteArray[iByte] := Nat8.fromNat(byteValue);
+                iByte += 1;
+            };
+
+            i += 8;
+        };
+
+        #ok(VarArray.sliceToArray(byteArray, 0, iByte));
     };
 
     /// Converts a byte iterator to a Base64 encoded text string.
@@ -490,6 +607,279 @@ module {
         Buffer.reverse(bytes);
 
         #ok(Buffer.toArray(bytes));
+    };
+
+    // Base32 standard character to value lookup table (128 elements for ASCII)
+    let base32StandardCharToValueTable : [?Nat32] = [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        ?26,
+        ?27,
+        ?28,
+        ?29,
+        ?30,
+        ?31,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null, // 50-55: '2'-'7'
+        null,
+        ?0,
+        ?1,
+        ?2,
+        ?3,
+        ?4,
+        ?5,
+        ?6,
+        ?7,
+        ?8,
+        ?9,
+        ?10,
+        ?11,
+        ?12,
+        ?13,
+        ?14, // 65-80: 'A'-'P'
+        ?15,
+        ?16,
+        ?17,
+        ?18,
+        ?19,
+        ?20,
+        ?21,
+        ?22,
+        ?23,
+        ?24,
+        ?25,
+        null,
+        null,
+        null,
+        null,
+        null, // 81-90: 'Q'-'Z'
+        null,
+        ?0,
+        ?1,
+        ?2,
+        ?3,
+        ?4,
+        ?5,
+        ?6,
+        ?7,
+        ?8,
+        ?9,
+        ?10,
+        ?11,
+        ?12,
+        ?13,
+        ?14, // 97-112: 'a'-'p'
+        ?15,
+        ?16,
+        ?17,
+        ?18,
+        ?19,
+        ?20,
+        ?21,
+        ?22,
+        ?23,
+        ?24,
+        ?25,
+        null,
+        null,
+        null,
+        null,
+        null // 113-122: 'q'-'z'
+    ];
+
+    // Base32 extended hex character to value lookup table (128 elements for ASCII)
+    let base32ExtendedHexCharToValueTable : [?Nat32] = [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        ?0,
+        ?1,
+        ?2,
+        ?3,
+        ?4,
+        ?5,
+        ?6,
+        ?7,
+        ?8,
+        ?9,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null, // 48-57: '0'-'9'
+        null,
+        ?10,
+        ?11,
+        ?12,
+        ?13,
+        ?14,
+        ?15,
+        ?16,
+        ?17,
+        ?18,
+        ?19,
+        ?20,
+        ?21,
+        ?22,
+        ?23,
+        ?24, // 65-80: 'A'-'P'
+        ?25,
+        ?26,
+        ?27,
+        ?28,
+        ?29,
+        ?30,
+        ?31,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null, // 81-86: 'Q'-'V'
+        null,
+        ?10,
+        ?11,
+        ?12,
+        ?13,
+        ?14,
+        ?15,
+        ?16,
+        ?17,
+        ?18,
+        ?19,
+        ?20,
+        ?21,
+        ?22,
+        ?23,
+        ?24, // 97-112: 'a'-'p'
+        ?25,
+        ?26,
+        ?27,
+        ?28,
+        ?29,
+        ?30,
+        ?31,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null // 113-118: 'q'-'v'
+    ];
+
+    // Helper function for Base32 character to value conversion
+    private func base32CharToValue(c : Char, charToValueTable : [?Nat32]) : ?Nat32 {
+        let charCode = Nat32.toNat(Char.toNat32(c));
+        if (charCode >= charToValueTable.size()) {
+            return null;
+        };
+        charToValueTable[charCode];
     };
 
     // Base32 standard character table (A-Z, 2-7)

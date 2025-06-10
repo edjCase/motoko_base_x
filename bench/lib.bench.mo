@@ -17,7 +17,7 @@ module {
         bench.name("BaseX Encoding and Decoding Benchmarks");
         bench.description("Decode a base46 string that decodes to [0, 1, 2, ..., 255] n times");
 
-        bench.rows(["fromBase64", "toBase64", "toBase64UriSafe", "fromBase16", "toBase16", "fromBase58", "toBase58"]);
+        bench.rows(["fromBase64", "toBase64", "toBase64UriSafe", "fromBase32", "toBase32", "fromBase16", "toBase16", "fromBase58", "toBase58"]);
         bench.cols(["1", "100", "10000"]);
 
         bench.runner(
@@ -36,6 +36,15 @@ module {
                 } else if (row == "toBase64UriSafe") {
                     for (i in Iter.range(1, n)) {
                         ignore BaseX.toBase64(byteTestData.vals(), #url);
+                    };
+                } else if (row == "fromBase32") {
+                    for (i in Iter.range(1, n)) {
+                        let data = BaseX.fromBase32(base64TextTestData, #standard);
+                        assert Result.isOk(data);
+                    };
+                } else if (row == "toBase32") {
+                    for (i in Iter.range(1, n)) {
+                        ignore BaseX.toBase32(byteTestData.vals(), #standard({ isUpper = true }));
                     };
                 } else if (row == "fromBase16") {
                     for (i in Iter.range(1, n)) {

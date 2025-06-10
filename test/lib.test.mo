@@ -575,3 +575,528 @@ test(
     };
   },
 );
+test(
+  "to/fromBase32",
+  func() {
+    let testCases : [{
+      input : Blob;
+      outputFormat : BaseX.Base32OutputFormat;
+      inputFormat : BaseX.Base32InputFormat;
+      expected : Text;
+    }] = [
+      // RFC 4648 test vectors - Standard Base32
+      {
+        input = "";
+        outputFormat = #standard({ isUpper = true });
+        inputFormat = #standard;
+        expected = "";
+      },
+      {
+        input = "f";
+        outputFormat = #standard({ isUpper = true });
+        inputFormat = #standard;
+        expected = "MY======";
+      },
+      {
+        input = "fo";
+        outputFormat = #standard({ isUpper = true });
+        inputFormat = #standard;
+        expected = "MZXQ====";
+      },
+      {
+        input = "foo";
+        outputFormat = #standard({ isUpper = true });
+        inputFormat = #standard;
+        expected = "MZXW6===";
+      },
+      {
+        input = "foob";
+        outputFormat = #standard({ isUpper = true });
+        inputFormat = #standard;
+        expected = "MZXW6YQ=";
+      },
+      {
+        input = "fooba";
+        outputFormat = #standard({ isUpper = true });
+        inputFormat = #standard;
+        expected = "MZXW6YTB";
+      },
+      {
+        input = "foobar";
+        outputFormat = #standard({ isUpper = true });
+        inputFormat = #standard;
+        expected = "MZXW6YTBOI======";
+      },
+
+      // Same test vectors - Standard Base32 lowercase
+      {
+        input = "f";
+        outputFormat = #standard({ isUpper = false });
+        inputFormat = #standard;
+        expected = "my======";
+      },
+      {
+        input = "fo";
+        outputFormat = #standard({ isUpper = false });
+        inputFormat = #standard;
+        expected = "mzxq====";
+      },
+      {
+        input = "foo";
+        outputFormat = #standard({ isUpper = false });
+        inputFormat = #standard;
+        expected = "mzxw6===";
+      },
+      {
+        input = "foob";
+        outputFormat = #standard({ isUpper = false });
+        inputFormat = #standard;
+        expected = "mzxw6yq=";
+      },
+      {
+        input = "fooba";
+        outputFormat = #standard({ isUpper = false });
+        inputFormat = #standard;
+        expected = "mzxw6ytb";
+      },
+      {
+        input = "foobar";
+        outputFormat = #standard({ isUpper = false });
+        inputFormat = #standard;
+        expected = "mzxw6ytboi======";
+      },
+
+      // RFC 4648 test vectors - Extended Hex Base32
+      {
+        input = "f";
+        outputFormat = #extendedHex({ isUpper = true });
+        inputFormat = #extendedHex;
+        expected = "CO======";
+      },
+      {
+        input = "fo";
+        outputFormat = #extendedHex({ isUpper = true });
+        inputFormat = #extendedHex;
+        expected = "CPNG====";
+      },
+      {
+        input = "foo";
+        outputFormat = #extendedHex({ isUpper = true });
+        inputFormat = #extendedHex;
+        expected = "CPNMU===";
+      },
+      {
+        input = "foob";
+        outputFormat = #extendedHex({ isUpper = true });
+        inputFormat = #extendedHex;
+        expected = "CPNMUOG=";
+      },
+      {
+        input = "fooba";
+        outputFormat = #extendedHex({ isUpper = true });
+        inputFormat = #extendedHex;
+        expected = "CPNMUOJ1";
+      },
+      {
+        input = "foobar";
+        outputFormat = #extendedHex({ isUpper = true });
+        inputFormat = #extendedHex;
+        expected = "CPNMUOJ1E8======";
+      },
+
+      // Extended Hex Base32 lowercase
+      {
+        input = "f";
+        outputFormat = #extendedHex({ isUpper = false });
+        inputFormat = #extendedHex;
+        expected = "co======";
+      },
+      {
+        input = "fo";
+        outputFormat = #extendedHex({ isUpper = false });
+        inputFormat = #extendedHex;
+        expected = "cpng====";
+      },
+      {
+        input = "foo";
+        outputFormat = #extendedHex({ isUpper = false });
+        inputFormat = #extendedHex;
+        expected = "cpnmu===";
+      },
+      {
+        input = "foob";
+        outputFormat = #extendedHex({ isUpper = false });
+        inputFormat = #extendedHex;
+        expected = "cpnmuog=";
+      },
+      {
+        input = "fooba";
+        outputFormat = #extendedHex({ isUpper = false });
+        inputFormat = #extendedHex;
+        expected = "cpnmuoj1";
+      },
+      {
+        input = "foobar";
+        outputFormat = #extendedHex({ isUpper = false });
+        inputFormat = #extendedHex;
+        expected = "cpnmuoj1e8======";
+      },
+
+      // Binary data tests
+      {
+        input = "\00";
+        outputFormat = #standard({ isUpper = true });
+        inputFormat = #standard;
+        expected = "AA======";
+      },
+      {
+        input = "\00";
+        outputFormat = #extendedHex({ isUpper = true });
+        inputFormat = #extendedHex;
+        expected = "00======";
+      },
+      {
+        input = "\01";
+        outputFormat = #standard({ isUpper = true });
+        inputFormat = #standard;
+        expected = "AE======";
+      },
+      {
+        input = "\01";
+        outputFormat = #extendedHex({ isUpper = true });
+        inputFormat = #extendedHex;
+        expected = "04======";
+      },
+      {
+        input = "\FF";
+        outputFormat = #standard({ isUpper = true });
+        inputFormat = #standard;
+        expected = "74======";
+      },
+      {
+        input = "\FF";
+        outputFormat = #extendedHex({ isUpper = true });
+        inputFormat = #extendedHex;
+        expected = "VS======";
+      },
+
+      // Multiple bytes
+      {
+        input = "\01\02\03\04\05";
+        outputFormat = #standard({ isUpper = true });
+        inputFormat = #standard;
+        expected = "AEBAGBAF";
+      },
+      {
+        input = "\01\02\03\04\05";
+        outputFormat = #extendedHex({ isUpper = true });
+        inputFormat = #extendedHex;
+        expected = "04106105";
+      },
+
+      // ASCII text
+      {
+        input = "Hello";
+        outputFormat = #standard({ isUpper = true });
+        inputFormat = #standard;
+        expected = "JBSWY3DP";
+      },
+      {
+        input = "Hello";
+        outputFormat = #extendedHex({ isUpper = true });
+        inputFormat = #extendedHex;
+        expected = "91IMOR3F";
+      },
+      {
+        input = "Hello World!";
+        outputFormat = #standard({ isUpper = true });
+        inputFormat = #standard;
+        expected = "JBSWY3DPEBLW64TMMQQQ====";
+      },
+      {
+        input = "Hello World!";
+        outputFormat = #extendedHex({ isUpper = true });
+        inputFormat = #extendedHex;
+        expected = "91IMOR3F41BMUSJCCGGG====";
+      },
+
+      // UTF-8 characters
+      {
+        input = "→★♠";
+        outputFormat = #standard({ isUpper = true });
+        inputFormat = #standard;
+        expected = "4KDJFYUYQXRJTIA=";
+      },
+      {
+        input = "→★♠";
+        outputFormat = #extendedHex({ isUpper = true });
+        inputFormat = #extendedHex;
+        expected = "SA395OKOGNH9J80=";
+      },
+
+      // Japanese characters
+      {
+        input = "日本語";
+        outputFormat = #standard({ isUpper = true });
+        inputFormat = #standard;
+        expected = "42L2LZU4VTUKVHQ=";
+      },
+      {
+        input = "日本語";
+        outputFormat = #extendedHex({ isUpper = true });
+        inputFormat = #extendedHex;
+        expected = "SQBQBPKSLJKAL7G=";
+      },
+
+      // All zeros
+      {
+        input = "\00\00\00\00\00";
+        outputFormat = #standard({ isUpper = true });
+        inputFormat = #standard;
+        expected = "AAAAAAAA";
+      },
+      {
+        input = "\00\00\00\00\00";
+        outputFormat = #extendedHex({ isUpper = true });
+        inputFormat = #extendedHex;
+        expected = "00000000";
+      },
+
+      // All ones
+      {
+        input = "\FF\FF\FF\FF\FF";
+        outputFormat = #standard({ isUpper = true });
+        inputFormat = #standard;
+        expected = "77777777";
+      },
+      {
+        input = "\FF\FF\FF\FF\FF";
+        outputFormat = #extendedHex({ isUpper = true });
+        inputFormat = #extendedHex;
+        expected = "VVVVVVVV";
+      },
+
+      // Pattern that tests all characters
+      {
+        input = "\00\44\32\14\C7\42\54\B6\35\CF\84\65\3A\56\D7\C6\75\BE\77\DF";
+        outputFormat = #standard({ isUpper = true });
+        inputFormat = #standard;
+        expected = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+      },
+
+      // Single character inputs
+      {
+        input = "A";
+        outputFormat = #standard({ isUpper = true });
+        inputFormat = #standard;
+        expected = "IE======";
+      },
+      {
+        input = "A";
+        outputFormat = #extendedHex({ isUpper = true });
+        inputFormat = #extendedHex;
+        expected = "84======";
+      },
+
+      // Two character inputs
+      {
+        input = "AB";
+        outputFormat = #standard({ isUpper = true });
+        inputFormat = #standard;
+        expected = "IFBA====";
+      },
+      {
+        input = "AB";
+        outputFormat = #extendedHex({ isUpper = true });
+        inputFormat = #extendedHex;
+        expected = "8510====";
+      },
+
+      // Three character inputs
+      {
+        input = "ABC";
+        outputFormat = #standard({ isUpper = true });
+        inputFormat = #standard;
+        expected = "IFBEG===";
+      },
+      {
+        input = "ABC";
+        outputFormat = #extendedHex({ isUpper = true });
+        inputFormat = #extendedHex;
+        expected = "85146===";
+      },
+
+      // Four character inputs
+      {
+        input = "ABCD";
+        outputFormat = #standard({ isUpper = true });
+        inputFormat = #standard;
+        expected = "IFBEGRA=";
+      },
+      {
+        input = "ABCD";
+        outputFormat = #extendedHex({ isUpper = true });
+        inputFormat = #extendedHex;
+        expected = "85146H0=";
+      },
+
+      // Binary data with mix of values
+      {
+        input = "\AA\55\FF\00\CC";
+        outputFormat = #standard({ isUpper = true });
+        inputFormat = #standard;
+        expected = "VJK76AGM";
+      },
+      {
+        input = "\AA\55\FF\00\CC";
+        outputFormat = #extendedHex({ isUpper = true });
+        inputFormat = #extendedHex;
+        expected = "L9AVU06C";
+      },
+
+      // Longer text string
+      {
+        input = "The quick brown fox jumps over the lazy dog";
+        outputFormat = #standard({ isUpper = true });
+        inputFormat = #standard;
+        expected = "KRUGKIDROVUWG2ZAMJZG653OEBTG66BANJ2W24DTEBXXMZLSEB2GQZJANRQXU6JAMRXWO===";
+      },
+
+      // Numbers and special characters
+      {
+        input = "1234567890!@#$%^&*()";
+        outputFormat = #standard({ isUpper = false });
+        inputFormat = #standard;
+        expected = "gezdgnbvgy3tqojqefacgjbflytcukbj";
+      },
+
+      // Mixed case input (should encode regardless of case)
+      {
+        input = "Base32 Encoding Test 123!";
+        outputFormat = #extendedHex({ isUpper = false });
+        inputFormat = #extendedHex;
+        expected = "89gn6p9j68g4arj3dti6irj741a6asrk40oj4cp1";
+      },
+    ];
+
+    for (testCase in testCases.vals()) {
+      let actual = BaseX.toBase32(testCase.input.vals(), testCase.outputFormat);
+      if (actual != testCase.expected) {
+        Debug.trap(
+          "toBase32 Failure\nValue: " # debug_show (testCase.input) #
+          "\nOutputFormat: " # debug_show (testCase.outputFormat) #
+          "\nExpected: " # testCase.expected #
+          "\nActual:   " # actual
+        );
+      };
+
+      // Test round-trip: encode then decode should give original
+      switch (BaseX.fromBase32(actual, testCase.inputFormat)) {
+        case (#err(e)) Runtime.trap(
+          "Failed to decode base32 value: " # actual # ". Error: " # e
+        );
+        case (#ok(actualReverse)) {
+          let actualReverseBlob = Blob.fromArray(actualReverse);
+          if (actualReverseBlob != testCase.input) {
+            Runtime.trap(
+              "fromBase32 Failure\nValue: " # debug_show (actual) #
+              "\nOutputFormat: " # debug_show (testCase.outputFormat) #
+              "\nExpected: " # debug_show (testCase.input) #
+              "\nActual:   " # debug_show (actualReverseBlob)
+            );
+          };
+        };
+      };
+    };
+  },
+);
+test(
+  "fromBase32 error cases",
+  func() {
+
+    // Test error cases for invalid Base32 characters
+    let errorTestCases : [{
+      input : Text;
+      inputFormat : BaseX.Base32InputFormat;
+      expectedError : Text;
+    }] = [
+      {
+        // Invalid character (special symbol)
+        input = "MZXW@YTB";
+        inputFormat = #standard;
+        expectedError = "Invalid Base32 character: '@'";
+      },
+      {
+        // Invalid character in extended hex Base32 (W when digits present)
+        input = "CPNM0WJ1";
+        inputFormat = #extendedHex;
+        expectedError = "Invalid Base32 character: 'W'";
+      },
+      {
+        // Invalid character in extended hex Base32 (X when digits present)
+        input = "CPNM1XJ1";
+        inputFormat = #extendedHex;
+        expectedError = "Invalid Base32 character: 'X'";
+      },
+      {
+        // Invalid character in extended hex Base32 (Y when digits present)
+        input = "CPNM8YJ1";
+        inputFormat = #extendedHex;
+        expectedError = "Invalid Base32 character: 'Y'";
+      },
+      {
+        // Invalid character in extended hex Base32 (Z when digits present)
+        input = "CPNM9ZJ1";
+        inputFormat = #extendedHex;
+        expectedError = "Invalid Base32 character: 'Z'";
+      },
+      {
+        // Invalid length (not multiple of 8 after removing padding)
+        input = "MZXW6YT";
+        inputFormat = #extendedHex;
+        expectedError = "Invalid Base32 string: Length must be a multiple of 8 characters";
+      },
+      {
+        // Padding in wrong position
+        input = "MZ=W6YTB";
+        inputFormat = #standard;
+        expectedError = "Invalid Base32 string: Padding character '=' found in the middle of the string";
+      },
+      {
+        // Invalid padding count
+        input = "MZXW6========";
+        inputFormat = #standard;
+        expectedError = "Invalid Base32 string: Length must be a multiple of 8 characters";
+      },
+      {
+        // Invalid character not in any Base32 alphabet
+        input = "HELLO!==";
+        inputFormat = #standard;
+        expectedError = "Invalid Base32 character: '!'";
+      },
+      {
+        // Invalid character not in any Base32 alphabet (period)
+        input = "MZXW.YTB";
+        inputFormat = #standard;
+        expectedError = "Invalid Base32 character: '.'";
+      },
+    ];
+
+    for (errorCase in errorTestCases.vals()) {
+      switch (BaseX.fromBase32(errorCase.input, errorCase.inputFormat)) {
+        case (#ok(_)) Runtime.trap(
+          "Expected error but got success for input: " # errorCase.input
+        );
+        case (#err(e)) {
+          if (e != errorCase.expectedError) {
+            Runtime.trap(
+              "Wrong error message for input: " # errorCase.input #
+              "\nExpected: " # errorCase.expectedError #
+              "\nActual:   " # e
+            );
+          };
+        };
+      };
+    };
+  },
+);
