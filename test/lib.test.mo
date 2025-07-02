@@ -987,6 +987,112 @@ test(
         inputFormat = #standard;
         expected = "afybeihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku";
       },
+      // ATProto Sortable Base32 test vectors
+      {
+        input = "";
+        outputFormat = #atprotoSortable;
+        inputFormat = #atprotoSortable;
+        expected = "";
+      },
+      {
+        input = "f";
+        outputFormat = #atprotoSortable;
+        inputFormat = #atprotoSortable;
+        expected = "gs";
+      },
+      {
+        input = "fo";
+        outputFormat = #atprotoSortable;
+        inputFormat = #atprotoSortable;
+        expected = "gtrk";
+      },
+      {
+        input = "foo";
+        outputFormat = #atprotoSortable;
+        inputFormat = #atprotoSortable;
+        expected = "gtrqy";
+      },
+      {
+        input = "foob";
+        outputFormat = #atprotoSortable;
+        inputFormat = #atprotoSortable;
+        expected = "gtrqysk";
+      },
+      {
+        input = "fooba";
+        outputFormat = #atprotoSortable;
+        inputFormat = #atprotoSortable;
+        expected = "gtrqysn3";
+      },
+      {
+        input = "foobar";
+        outputFormat = #atprotoSortable;
+        inputFormat = #atprotoSortable;
+        expected = "gtrqysn3ic";
+      },
+      {
+        input = "Hello";
+        outputFormat = #atprotoSortable;
+        inputFormat = #atprotoSortable;
+        expected = "d3mqsv5j";
+      },
+      {
+        input = "Hello World!";
+        outputFormat = #atprotoSortable;
+        inputFormat = #atprotoSortable;
+        expected = "d3mqsv5j63fqywnggkkk";
+      },
+      {
+        input = "\00";
+        outputFormat = #atprotoSortable;
+        inputFormat = #atprotoSortable;
+        expected = "22";
+      },
+      {
+        input = "\01";
+        outputFormat = #atprotoSortable;
+        inputFormat = #atprotoSortable;
+        expected = "26";
+      },
+      {
+        input = "\FF";
+        outputFormat = #atprotoSortable;
+        inputFormat = #atprotoSortable;
+        expected = "zw";
+      },
+      {
+        input = "\01\02\03\04\05";
+        outputFormat = #atprotoSortable;
+        inputFormat = #atprotoSortable;
+        expected = "2632a327";
+      },
+      // Test sortable property with timestamps
+      {
+        input = "\00\00\00\00\01";
+        outputFormat = #atprotoSortable;
+        inputFormat = #atprotoSortable;
+        expected = "22222223";
+      },
+      {
+        input = "\00\00\00\00\02";
+        outputFormat = #atprotoSortable;
+        inputFormat = #atprotoSortable;
+        expected = "22222224";
+      },
+      // UTF-8 characters
+      {
+        input = "→★♠";
+        outputFormat = #atprotoSortable;
+        inputFormat = #atprotoSortable;
+        expected = "we5d7soskrldnc2";
+      },
+      // Japanese characters
+      {
+        input = "日本語";
+        outputFormat = #atprotoSortable;
+        inputFormat = #atprotoSortable;
+        expected = "wufuftowpnoepbk";
+      },
     ];
 
     for (testCase in testCases.vals()) {
@@ -1089,6 +1195,42 @@ test(
         input = "MZXW.YTB";
         inputFormat = #standard;
         expectedError = "Invalid Base32 character: '.'";
+      },
+      {
+        // Invalid character in atproto sortable (0)
+        input = "d3iqh03f";
+        inputFormat = #atprotoSortable;
+        expectedError = "Invalid Base32 character: '0'";
+      },
+      {
+        // Invalid character in atproto sortable (1)
+        input = "d3iqh13f";
+        inputFormat = #atprotoSortable;
+        expectedError = "Invalid Base32 character: '1'";
+      },
+      {
+        // Invalid character in atproto sortable (8)
+        input = "d3iqh83f";
+        inputFormat = #atprotoSortable;
+        expectedError = "Invalid Base32 character: '8'";
+      },
+      {
+        // Invalid character in atproto sortable (9)
+        input = "d3iqh93f";
+        inputFormat = #atprotoSortable;
+        expectedError = "Invalid Base32 character: '9'";
+      },
+      {
+        // Invalid character in atproto sortable (uppercase A)
+        input = "d3iqhA3f";
+        inputFormat = #atprotoSortable;
+        expectedError = "Invalid Base32 character: 'A'";
+      },
+      {
+        // Invalid character in atproto sortable (uppercase Z)
+        input = "d3iqhZ3f";
+        inputFormat = #atprotoSortable;
+        expectedError = "Invalid Base32 character: 'Z'";
       },
     ];
 

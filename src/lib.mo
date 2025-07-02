@@ -38,11 +38,13 @@ module {
     public type Base32OutputFormat = {
         #standard : { isUpper : Bool; includePadding : Bool }; // RFC 4648, A-Z + 2-7, with padding
         #extendedHex : { isUpper : Bool; includePadding : Bool }; // RFC 4648, 0-9 + A-V, with padding
+        #atprotoSortable; // ATProto sortable, 2-7 + a-z
     };
 
     public type Base32InputFormat = {
         #standard; // RFC 4648, A-Z + 2-7, with padding
         #extendedHex; // RFC 4648, 0-9 + A-V, with padding
+        #atprotoSortable; // ATProto sortable, 2-7 + a-z
     };
 
     /// Converts a byte iterator to a Base32 encoded text string.
@@ -54,6 +56,9 @@ module {
     ///
     /// let extHex = toBase32(data, #extendedHex({ isUpper = false }));
     /// // extHex is "91imor3f"
+    ///
+    /// let atproto = toBase32(data, #atprotoSortable);
+    /// // atproto is "d4iqh3lf" (ATProto sortable alphabet)
     /// ```
     public func toBase32(data : Iter.Iter<Nat8>, format : Base32OutputFormat) : Text {
         var ret = "";
@@ -65,6 +70,7 @@ module {
         let (charTable, includePadding) = switch (format) {
             case (#standard({ isUpper; includePadding })) (if (isUpper) base32StandardUpperCharTable else base32StandardLowerCharTable, includePadding);
             case (#extendedHex({ isUpper; includePadding })) (if (isUpper) base32ExtendedHexUpperCharTable else base32ExtendedHexLowerCharTable, includePadding);
+            case (#atprotoSortable) (base32AtprotoSortableCharTable, false);
         };
 
         for (byte in data) {
@@ -110,6 +116,9 @@ module {
     ///   };
     ///   case (#err(error)) { /* Handle error */ };
     /// };
+    ///
+    /// let atproto = "lrqxgi23"; // "foobar" in ATProto sortable base32
+    /// let result2 = fromBase32(atproto, #atprotoSortable);
     /// ```
     public func fromBase32(text : Text, format : Base32InputFormat) : Result.Result<[Nat8], Text> {
         if (text.size() == 0) {
@@ -137,6 +146,7 @@ module {
         let charToValueTable = switch (format) {
             case (#standard(_)) base32StandardCharToValueTable;
             case (#extendedHex(_)) base32ExtendedHexCharToValueTable;
+            case (#atprotoSortable) base32AtprotoSortableCharToValueTable;
         };
 
         // Calculate output size (5 bytes per 8 input characters, adjusted for padding)
@@ -873,6 +883,139 @@ module {
         null // 113-118: 'q'-'v'
     ];
 
+    // Base32 ATProto sortable character to value lookup table (128 elements for ASCII)
+    // Alphabet: 234567abcdefghijklmnopqrstuvwxyz
+    let base32AtprotoSortableCharToValueTable : [?Nat32] = [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        ?0,
+        ?1,
+        ?2,
+        ?3,
+        ?4,
+        ?5,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null, // 48-63: '2'-'7' (values 0-5)
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null, // 64-95: uppercase (not used)
+        null,
+        ?6,
+        ?7,
+        ?8,
+        ?9,
+        ?10,
+        ?11,
+        ?12,
+        ?13,
+        ?14,
+        ?15,
+        ?16,
+        ?17,
+        ?18,
+        ?19,
+        ?20, // 96-111: 'a'-'p' (values 6-21)
+        ?21,
+        ?22,
+        ?23,
+        ?24,
+        ?25,
+        ?26,
+        ?27,
+        ?28,
+        ?29,
+        ?30,
+        ?31,
+        null,
+        null,
+        null,
+        null,
+        null // 112-127: 'q'-'z' (values 22-31)
+    ];
+
     // Helper function for Base32 character to value conversion
     private func base32CharToValue(c : Char, charToValueTable : [?Nat32]) : ?Nat32 {
         let charCode = Nat32.toNat(Char.toNat32(c));
@@ -1022,6 +1165,43 @@ module {
         't',
         'u',
         'v',
+    ];
+
+    // Base32 ATProto sortable character table
+    // Alphabet: 234567abcdefghijklmnopqrstuvwxyz
+    let base32AtprotoSortableCharTable : [Char] = [
+        '2',
+        '3',
+        '4',
+        '5',
+        '6',
+        '7',
+        'a',
+        'b',
+        'c',
+        'd',
+        'e',
+        'f',
+        'g',
+        'h',
+        'i',
+        'j',
+        'k',
+        'l',
+        'm',
+        'n',
+        'o',
+        'p',
+        'q',
+        'r',
+        's',
+        't',
+        'u',
+        'v',
+        'w',
+        'x',
+        'y',
+        'z',
     ];
 
     // Precomputed lookup table for Base58 character to value conversion (index = ASCII value, value = Base58 value or null)
