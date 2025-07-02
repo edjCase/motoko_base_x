@@ -14,193 +14,193 @@ test(
     }] = [
       {
         input = "\48\49\50\51\52\53\54\55\56\57";
-        outputFormat = #standard;
+        outputFormat = #standard({ includePadding = true });
         expected = "SElQUVJTVFVWVw==";
       },
       {
         input = "\48\49\50\51\52\53\54\55\56\57";
-        outputFormat = #url;
+        outputFormat = #url({ includePadding = false });
         expected = "SElQUVJTVFVWVw";
       },
       {
         input = "\48\49\50\51\52\53\54\55";
-        outputFormat = #standard;
+        outputFormat = #standard({ includePadding = true });
         expected = "SElQUVJTVFU=";
       },
       {
         input = "\48\49\50\51\52\53\54\55";
-        outputFormat = #url;
+        outputFormat = #url({ includePadding = false });
         expected = "SElQUVJTVFU";
       },
       {
         input = "\FC\03\3F";
-        outputFormat = #standard;
+        outputFormat = #standard({ includePadding = true });
         expected = "/AM/";
       },
       {
         input = "\FC\03\3F";
-        outputFormat = #url;
+        outputFormat = #url({ includePadding = false });
         expected = "_AM_";
       },
       {
         input = "\01";
-        outputFormat = #standard;
+        outputFormat = #standard({ includePadding = true });
         expected = "AQ==";
       },
       {
         input = "\01";
-        outputFormat = #url;
+        outputFormat = #url({ includePadding = false });
         expected = "AQ";
       },
       {
         input = "\01\02";
-        outputFormat = #standard;
+        outputFormat = #standard({ includePadding = true });
         expected = "AQI=";
       },
       {
         input = "\01\02";
-        outputFormat = #url;
+        outputFormat = #url({ includePadding = false });
         expected = "AQI";
       },
       {
         input = "\FB\FF\FF";
-        outputFormat = #standard;
+        outputFormat = #standard({ includePadding = true });
         expected = "+///";
       },
       {
         input = "\FB\FF\FF";
-        outputFormat = #url;
+        outputFormat = #url({ includePadding = false });
         expected = "-___";
       },
       {
         input = "\AA\55\FF";
-        outputFormat = #standard;
+        outputFormat = #standard({ includePadding = true });
         expected = "qlX/";
       },
       {
         input = "\AA\55\FF";
-        outputFormat = #url;
+        outputFormat = #url({ includePadding = false });
         expected = "qlX_";
       },
       {
         // Empty string
         input = "";
-        outputFormat = #standard;
+        outputFormat = #standard({ includePadding = true });
         expected = "";
       },
       {
         // Single character (requires double padding)
         input = "A";
-        outputFormat = #standard;
+        outputFormat = #standard({ includePadding = true });
         expected = "QQ==";
       },
       {
         // Single character URI-safe (no padding)
         input = "A";
-        outputFormat = #url;
+        outputFormat = #url({ includePadding = false });
         expected = "QQ";
       },
       {
         // Two characters (requires single padding)
         input = "BC";
-        outputFormat = #standard;
+        outputFormat = #standard({ includePadding = true });
         expected = "QkM=";
       },
       {
         // Two characters URI-safe (no padding)
         input = "BC";
-        outputFormat = #url;
+        outputFormat = #url({ includePadding = false });
         expected = "QkM";
       },
       {
         // Three characters (no padding required)
         input = "DEF";
-        outputFormat = #standard;
+        outputFormat = #standard({ includePadding = true });
         expected = "REVG";
       },
       {
         // Special characters
         input = "!@#$%";
-        outputFormat = #standard;
+        outputFormat = #standard({ includePadding = true });
         expected = "IUAjJCU=";
       },
       {
         // Binary data with zeros
         input = "\00\01\02\03";
-        outputFormat = #standard;
+        outputFormat = #standard({ includePadding = true });
         expected = "AAECAw==";
       },
       {
         // UTF-8 characters (corrected)
         input = "→★♠";
-        outputFormat = #standard;
+        outputFormat = #standard({ includePadding = true });
         expected = "4oaS4piF4pmg";
       },
       {
         // Longer text string
         input = "Base64 encoding test 123!";
-        outputFormat = #url;
+        outputFormat = #url({ includePadding = false });
         expected = "QmFzZTY0IGVuY29kaW5nIHRlc3QgMTIzIQ";
       },
 
       {
         // Mixed case alphanumeric with punctuation
         input = "Hello, World! 123";
-        outputFormat = #standard;
+        outputFormat = #standard({ includePadding = true });
         expected = "SGVsbG8sIFdvcmxkISAxMjM=";
       },
       {
         // Special characters that require URI-safe encoding
         input = "~!@#$%^&*()_+{}|:<>?";
-        outputFormat = #url;
+        outputFormat = #url({ includePadding = false });
         expected = "fiFAIyQlXiYqKClfK3t9fDo8Pj8";
       },
       {
         // Multi-byte UTF-8 characters
         input = "日本語";
-        outputFormat = #standard;
+        outputFormat = #standard({ includePadding = true });
         expected = "5pel5pys6Kqe";
       },
       {
         // Mix of ASCII and UTF-8
         input = "ABC中文DEF";
-        outputFormat = #url;
+        outputFormat = #url({ includePadding = false });
         expected = "QUJD5Lit5paHREVG";
       },
       {
         // Binary data with pattern
         input = "\01\02\03\04\05\06\07\08";
-        outputFormat = #standard;
+        outputFormat = #standard({ includePadding = true });
         expected = "AQIDBAUGBwg=";
       },
       {
         // String length that produces 1 padding character
         input = "12345";
-        outputFormat = #standard;
+        outputFormat = #standard({ includePadding = true });
         expected = "MTIzNDU=";
       },
       {
         // Repeating characters
         input = "AAAABBBBCCCC";
-        outputFormat = #url;
+        outputFormat = #url({ includePadding = false });
         expected = "QUFBQUJCQkJDQ0ND";
       },
       {
         // Includes null bytes and other control characters
         input = "\00\01\10\11\20\21";
-        outputFormat = #standard;
+        outputFormat = #standard({ includePadding = true });
         expected = "AAEQESAh";
       },
       {
         // Characters that map to different values in base64
         input = "+/=";
-        outputFormat = #standard;
+        outputFormat = #standard({ includePadding = true });
         expected = "Ky89";
       },
       {
         // Same characters in URI-safe mode
         input = "+/=";
-        outputFormat = #url;
+        outputFormat = #url({ includePadding = false });
         expected = "Ky89";
       }
 
@@ -490,6 +490,10 @@ test(
         input = "\20\21\57\58";
         expected = "pdoZH";
       },
+      {
+        input = "\12\20\E3\B0\C4\42\98\FC\1C\14\9A\FB\F4\C8\99\6F\B9\24\27\AE\41\E4\64\9B\93\4C\A4\95\99\1B\78\52\B8\55";
+        expected = "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n";
+      },
     ];
 
     for (testCase in testCases.vals()) {
@@ -587,43 +591,43 @@ test(
       // RFC 4648 test vectors - Standard Base32
       {
         input = "";
-        outputFormat = #standard({ isUpper = true });
+        outputFormat = #standard({ isUpper = true; includePadding = true });
         inputFormat = #standard;
         expected = "";
       },
       {
         input = "f";
-        outputFormat = #standard({ isUpper = true });
+        outputFormat = #standard({ isUpper = true; includePadding = true });
         inputFormat = #standard;
         expected = "MY======";
       },
       {
         input = "fo";
-        outputFormat = #standard({ isUpper = true });
+        outputFormat = #standard({ isUpper = true; includePadding = true });
         inputFormat = #standard;
         expected = "MZXQ====";
       },
       {
         input = "foo";
-        outputFormat = #standard({ isUpper = true });
+        outputFormat = #standard({ isUpper = true; includePadding = true });
         inputFormat = #standard;
         expected = "MZXW6===";
       },
       {
         input = "foob";
-        outputFormat = #standard({ isUpper = true });
+        outputFormat = #standard({ isUpper = true; includePadding = true });
         inputFormat = #standard;
         expected = "MZXW6YQ=";
       },
       {
         input = "fooba";
-        outputFormat = #standard({ isUpper = true });
+        outputFormat = #standard({ isUpper = true; includePadding = true });
         inputFormat = #standard;
         expected = "MZXW6YTB";
       },
       {
         input = "foobar";
-        outputFormat = #standard({ isUpper = true });
+        outputFormat = #standard({ isUpper = true; includePadding = true });
         inputFormat = #standard;
         expected = "MZXW6YTBOI======";
       },
@@ -631,37 +635,37 @@ test(
       // Same test vectors - Standard Base32 lowercase
       {
         input = "f";
-        outputFormat = #standard({ isUpper = false });
+        outputFormat = #standard({ isUpper = false; includePadding = true });
         inputFormat = #standard;
         expected = "my======";
       },
       {
         input = "fo";
-        outputFormat = #standard({ isUpper = false });
+        outputFormat = #standard({ isUpper = false; includePadding = true });
         inputFormat = #standard;
         expected = "mzxq====";
       },
       {
         input = "foo";
-        outputFormat = #standard({ isUpper = false });
+        outputFormat = #standard({ isUpper = false; includePadding = true });
         inputFormat = #standard;
         expected = "mzxw6===";
       },
       {
         input = "foob";
-        outputFormat = #standard({ isUpper = false });
+        outputFormat = #standard({ isUpper = false; includePadding = true });
         inputFormat = #standard;
         expected = "mzxw6yq=";
       },
       {
         input = "fooba";
-        outputFormat = #standard({ isUpper = false });
+        outputFormat = #standard({ isUpper = false; includePadding = true });
         inputFormat = #standard;
         expected = "mzxw6ytb";
       },
       {
         input = "foobar";
-        outputFormat = #standard({ isUpper = false });
+        outputFormat = #standard({ isUpper = false; includePadding = true });
         inputFormat = #standard;
         expected = "mzxw6ytboi======";
       },
@@ -669,37 +673,37 @@ test(
       // RFC 4648 test vectors - Extended Hex Base32
       {
         input = "f";
-        outputFormat = #extendedHex({ isUpper = true });
+        outputFormat = #extendedHex({ isUpper = true; includePadding = true });
         inputFormat = #extendedHex;
         expected = "CO======";
       },
       {
         input = "fo";
-        outputFormat = #extendedHex({ isUpper = true });
+        outputFormat = #extendedHex({ isUpper = true; includePadding = true });
         inputFormat = #extendedHex;
         expected = "CPNG====";
       },
       {
         input = "foo";
-        outputFormat = #extendedHex({ isUpper = true });
+        outputFormat = #extendedHex({ isUpper = true; includePadding = true });
         inputFormat = #extendedHex;
         expected = "CPNMU===";
       },
       {
         input = "foob";
-        outputFormat = #extendedHex({ isUpper = true });
+        outputFormat = #extendedHex({ isUpper = true; includePadding = true });
         inputFormat = #extendedHex;
         expected = "CPNMUOG=";
       },
       {
         input = "fooba";
-        outputFormat = #extendedHex({ isUpper = true });
+        outputFormat = #extendedHex({ isUpper = true; includePadding = true });
         inputFormat = #extendedHex;
         expected = "CPNMUOJ1";
       },
       {
         input = "foobar";
-        outputFormat = #extendedHex({ isUpper = true });
+        outputFormat = #extendedHex({ isUpper = true; includePadding = true });
         inputFormat = #extendedHex;
         expected = "CPNMUOJ1E8======";
       },
@@ -707,37 +711,37 @@ test(
       // Extended Hex Base32 lowercase
       {
         input = "f";
-        outputFormat = #extendedHex({ isUpper = false });
+        outputFormat = #extendedHex({ isUpper = false; includePadding = true });
         inputFormat = #extendedHex;
         expected = "co======";
       },
       {
         input = "fo";
-        outputFormat = #extendedHex({ isUpper = false });
+        outputFormat = #extendedHex({ isUpper = false; includePadding = true });
         inputFormat = #extendedHex;
         expected = "cpng====";
       },
       {
         input = "foo";
-        outputFormat = #extendedHex({ isUpper = false });
+        outputFormat = #extendedHex({ isUpper = false; includePadding = true });
         inputFormat = #extendedHex;
         expected = "cpnmu===";
       },
       {
         input = "foob";
-        outputFormat = #extendedHex({ isUpper = false });
+        outputFormat = #extendedHex({ isUpper = false; includePadding = true });
         inputFormat = #extendedHex;
         expected = "cpnmuog=";
       },
       {
         input = "fooba";
-        outputFormat = #extendedHex({ isUpper = false });
+        outputFormat = #extendedHex({ isUpper = false; includePadding = true });
         inputFormat = #extendedHex;
         expected = "cpnmuoj1";
       },
       {
         input = "foobar";
-        outputFormat = #extendedHex({ isUpper = false });
+        outputFormat = #extendedHex({ isUpper = false; includePadding = true });
         inputFormat = #extendedHex;
         expected = "cpnmuoj1e8======";
       },
@@ -745,37 +749,37 @@ test(
       // Binary data tests
       {
         input = "\00";
-        outputFormat = #standard({ isUpper = true });
+        outputFormat = #standard({ isUpper = true; includePadding = true });
         inputFormat = #standard;
         expected = "AA======";
       },
       {
         input = "\00";
-        outputFormat = #extendedHex({ isUpper = true });
+        outputFormat = #extendedHex({ isUpper = true; includePadding = true });
         inputFormat = #extendedHex;
         expected = "00======";
       },
       {
         input = "\01";
-        outputFormat = #standard({ isUpper = true });
+        outputFormat = #standard({ isUpper = true; includePadding = true });
         inputFormat = #standard;
         expected = "AE======";
       },
       {
         input = "\01";
-        outputFormat = #extendedHex({ isUpper = true });
+        outputFormat = #extendedHex({ isUpper = true; includePadding = true });
         inputFormat = #extendedHex;
         expected = "04======";
       },
       {
         input = "\FF";
-        outputFormat = #standard({ isUpper = true });
+        outputFormat = #standard({ isUpper = true; includePadding = true });
         inputFormat = #standard;
         expected = "74======";
       },
       {
         input = "\FF";
-        outputFormat = #extendedHex({ isUpper = true });
+        outputFormat = #extendedHex({ isUpper = true; includePadding = true });
         inputFormat = #extendedHex;
         expected = "VS======";
       },
@@ -783,13 +787,13 @@ test(
       // Multiple bytes
       {
         input = "\01\02\03\04\05";
-        outputFormat = #standard({ isUpper = true });
+        outputFormat = #standard({ isUpper = true; includePadding = true });
         inputFormat = #standard;
         expected = "AEBAGBAF";
       },
       {
         input = "\01\02\03\04\05";
-        outputFormat = #extendedHex({ isUpper = true });
+        outputFormat = #extendedHex({ isUpper = true; includePadding = true });
         inputFormat = #extendedHex;
         expected = "04106105";
       },
@@ -797,25 +801,25 @@ test(
       // ASCII text
       {
         input = "Hello";
-        outputFormat = #standard({ isUpper = true });
+        outputFormat = #standard({ isUpper = true; includePadding = true });
         inputFormat = #standard;
         expected = "JBSWY3DP";
       },
       {
         input = "Hello";
-        outputFormat = #extendedHex({ isUpper = true });
+        outputFormat = #extendedHex({ isUpper = true; includePadding = true });
         inputFormat = #extendedHex;
         expected = "91IMOR3F";
       },
       {
         input = "Hello World!";
-        outputFormat = #standard({ isUpper = true });
+        outputFormat = #standard({ isUpper = true; includePadding = true });
         inputFormat = #standard;
         expected = "JBSWY3DPEBLW64TMMQQQ====";
       },
       {
         input = "Hello World!";
-        outputFormat = #extendedHex({ isUpper = true });
+        outputFormat = #extendedHex({ isUpper = true; includePadding = true });
         inputFormat = #extendedHex;
         expected = "91IMOR3F41BMUSJCCGGG====";
       },
@@ -823,13 +827,13 @@ test(
       // UTF-8 characters
       {
         input = "→★♠";
-        outputFormat = #standard({ isUpper = true });
+        outputFormat = #standard({ isUpper = true; includePadding = true });
         inputFormat = #standard;
         expected = "4KDJFYUYQXRJTIA=";
       },
       {
         input = "→★♠";
-        outputFormat = #extendedHex({ isUpper = true });
+        outputFormat = #extendedHex({ isUpper = true; includePadding = true });
         inputFormat = #extendedHex;
         expected = "SA395OKOGNH9J80=";
       },
@@ -837,13 +841,13 @@ test(
       // Japanese characters
       {
         input = "日本語";
-        outputFormat = #standard({ isUpper = true });
+        outputFormat = #standard({ isUpper = true; includePadding = true });
         inputFormat = #standard;
         expected = "42L2LZU4VTUKVHQ=";
       },
       {
         input = "日本語";
-        outputFormat = #extendedHex({ isUpper = true });
+        outputFormat = #extendedHex({ isUpper = true; includePadding = true });
         inputFormat = #extendedHex;
         expected = "SQBQBPKSLJKAL7G=";
       },
@@ -851,13 +855,13 @@ test(
       // All zeros
       {
         input = "\00\00\00\00\00";
-        outputFormat = #standard({ isUpper = true });
+        outputFormat = #standard({ isUpper = true; includePadding = true });
         inputFormat = #standard;
         expected = "AAAAAAAA";
       },
       {
         input = "\00\00\00\00\00";
-        outputFormat = #extendedHex({ isUpper = true });
+        outputFormat = #extendedHex({ isUpper = true; includePadding = true });
         inputFormat = #extendedHex;
         expected = "00000000";
       },
@@ -865,13 +869,13 @@ test(
       // All ones
       {
         input = "\FF\FF\FF\FF\FF";
-        outputFormat = #standard({ isUpper = true });
+        outputFormat = #standard({ isUpper = true; includePadding = true });
         inputFormat = #standard;
         expected = "77777777";
       },
       {
         input = "\FF\FF\FF\FF\FF";
-        outputFormat = #extendedHex({ isUpper = true });
+        outputFormat = #extendedHex({ isUpper = true; includePadding = true });
         inputFormat = #extendedHex;
         expected = "VVVVVVVV";
       },
@@ -879,7 +883,7 @@ test(
       // Pattern that tests all characters
       {
         input = "\00\44\32\14\C7\42\54\B6\35\CF\84\65\3A\56\D7\C6\75\BE\77\DF";
-        outputFormat = #standard({ isUpper = true });
+        outputFormat = #standard({ isUpper = true; includePadding = true });
         inputFormat = #standard;
         expected = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
       },
@@ -887,13 +891,13 @@ test(
       // Single character inputs
       {
         input = "A";
-        outputFormat = #standard({ isUpper = true });
+        outputFormat = #standard({ isUpper = true; includePadding = true });
         inputFormat = #standard;
         expected = "IE======";
       },
       {
         input = "A";
-        outputFormat = #extendedHex({ isUpper = true });
+        outputFormat = #extendedHex({ isUpper = true; includePadding = true });
         inputFormat = #extendedHex;
         expected = "84======";
       },
@@ -901,13 +905,13 @@ test(
       // Two character inputs
       {
         input = "AB";
-        outputFormat = #standard({ isUpper = true });
+        outputFormat = #standard({ isUpper = true; includePadding = true });
         inputFormat = #standard;
         expected = "IFBA====";
       },
       {
         input = "AB";
-        outputFormat = #extendedHex({ isUpper = true });
+        outputFormat = #extendedHex({ isUpper = true; includePadding = true });
         inputFormat = #extendedHex;
         expected = "8510====";
       },
@@ -915,13 +919,13 @@ test(
       // Three character inputs
       {
         input = "ABC";
-        outputFormat = #standard({ isUpper = true });
+        outputFormat = #standard({ isUpper = true; includePadding = true });
         inputFormat = #standard;
         expected = "IFBEG===";
       },
       {
         input = "ABC";
-        outputFormat = #extendedHex({ isUpper = true });
+        outputFormat = #extendedHex({ isUpper = true; includePadding = true });
         inputFormat = #extendedHex;
         expected = "85146===";
       },
@@ -929,13 +933,13 @@ test(
       // Four character inputs
       {
         input = "ABCD";
-        outputFormat = #standard({ isUpper = true });
+        outputFormat = #standard({ isUpper = true; includePadding = true });
         inputFormat = #standard;
         expected = "IFBEGRA=";
       },
       {
         input = "ABCD";
-        outputFormat = #extendedHex({ isUpper = true });
+        outputFormat = #extendedHex({ isUpper = true; includePadding = true });
         inputFormat = #extendedHex;
         expected = "85146H0=";
       },
@@ -943,13 +947,13 @@ test(
       // Binary data with mix of values
       {
         input = "\AA\55\FF\00\CC";
-        outputFormat = #standard({ isUpper = true });
+        outputFormat = #standard({ isUpper = true; includePadding = true });
         inputFormat = #standard;
         expected = "VJK76AGM";
       },
       {
         input = "\AA\55\FF\00\CC";
-        outputFormat = #extendedHex({ isUpper = true });
+        outputFormat = #extendedHex({ isUpper = true; includePadding = true });
         inputFormat = #extendedHex;
         expected = "L9AVU06C";
       },
@@ -957,7 +961,7 @@ test(
       // Longer text string
       {
         input = "The quick brown fox jumps over the lazy dog";
-        outputFormat = #standard({ isUpper = true });
+        outputFormat = #standard({ isUpper = true; includePadding = true });
         inputFormat = #standard;
         expected = "KRUGKIDROVUWG2ZAMJZG653OEBTG66BANJ2W24DTEBXXMZLSEB2GQZJANRQXU6JAMRXWO===";
       },
@@ -965,7 +969,7 @@ test(
       // Numbers and special characters
       {
         input = "1234567890!@#$%^&*()";
-        outputFormat = #standard({ isUpper = false });
+        outputFormat = #standard({ isUpper = false; includePadding = true });
         inputFormat = #standard;
         expected = "gezdgnbvgy3tqojqefacgjbflytcukbj";
       },
@@ -973,9 +977,15 @@ test(
       // Mixed case input (should encode regardless of case)
       {
         input = "Base32 Encoding Test 123!";
-        outputFormat = #extendedHex({ isUpper = false });
+        outputFormat = #extendedHex({ isUpper = false; includePadding = true });
         inputFormat = #extendedHex;
         expected = "89gn6p9j68g4arj3dti6irj741a6asrk40oj4cp1";
+      },
+      {
+        input = "\01\70\12\20\E3\B0\C4\42\98\FC\1C\14\9A\FB\F4\C8\99\6F\B9\24\27\AE\41\E4\64\9B\93\4C\A4\95\99\1B\78\52\B8\55";
+        outputFormat = #standard({ isUpper = false; includePadding = false });
+        inputFormat = #standard;
+        expected = "afybeihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku";
       },
     ];
 
@@ -1054,7 +1064,7 @@ test(
         // Invalid length (not multiple of 8 after removing padding)
         input = "MZXW6YT";
         inputFormat = #extendedHex;
-        expectedError = "Invalid Base32 string: Length must be a multiple of 8 characters";
+        expectedError = "Invalid Base32 character: 'Z'";
       },
       {
         // Padding in wrong position
@@ -1066,7 +1076,7 @@ test(
         // Invalid padding count
         input = "MZXW6========";
         inputFormat = #standard;
-        expectedError = "Invalid Base32 string: Length must be a multiple of 8 characters";
+        expectedError = "Invalid Base32 string: Invalid padding count of 8";
       },
       {
         // Invalid character not in any Base32 alphabet

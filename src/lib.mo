@@ -31,14 +31,13 @@ module {
     };
 
     public type Base64OutputFormat = {
-        #standard;
-        #url;
-        #urlWithPadding;
+        #standard : { includePadding : Bool }; // RFC 4648 Base64
+        #url : { includePadding : Bool }; // RFC 4648 URL-safe Base64
     };
 
     public type Base32OutputFormat = {
-        #standard : { isUpper : Bool }; // RFC 4648, A-Z + 2-7, with padding
-        #extendedHex : { isUpper : Bool }; // RFC 4648, 0-9 + A-V, with padding
+        #standard : { isUpper : Bool; includePadding : Bool }; // RFC 4648, A-Z + 2-7, with padding
+        #extendedHex : { isUpper : Bool; includePadding : Bool }; // RFC 4648, 0-9 + A-V, with padding
     };
 
     public type Base32InputFormat = {
@@ -63,9 +62,9 @@ module {
         var totalBits = 0;
 
         // Determine character set based on format
-        let charTable = switch (format) {
-            case (#standard({ isUpper })) if (isUpper) base32StandardUpperCharTable else base32StandardLowerCharTable;
-            case (#extendedHex({ isUpper })) if (isUpper) base32ExtendedHexUpperCharTable else base32ExtendedHexLowerCharTable;
+        let (charTable, includePadding) = switch (format) {
+            case (#standard({ isUpper; includePadding })) (if (isUpper) base32StandardUpperCharTable else base32StandardLowerCharTable, includePadding);
+            case (#extendedHex({ isUpper; includePadding })) (if (isUpper) base32ExtendedHexUpperCharTable else base32ExtendedHexLowerCharTable, includePadding);
         };
 
         for (byte in data) {
@@ -89,13 +88,14 @@ module {
             ret #= Char.toText(charTable[Nat32.toNat(index)]);
         };
 
-        // Add padding to make total length a multiple of 8
-        let outputLength = ret.size();
-        let paddingNeeded : Nat = (8 - (outputLength % 8)) % 8;
-        for (_ in Nat.range(0, paddingNeeded)) {
-            ret #= "=";
+        if (includePadding) {
+            // Add padding to make total length a multiple of 8
+            let outputLength = ret.size();
+            let paddingNeeded : Nat = (8 - (outputLength % 8)) % 8;
+            for (_ in Nat.range(0, paddingNeeded)) {
+                ret #= "=";
+            };
         };
-
         ret;
     };
 
@@ -128,7 +128,9 @@ module {
 
         // Base32 strings must be multiples of 8 characters (with padding)
         if (charCount % 8 != 0) {
-            return #err("Invalid Base32 string: Length must be a multiple of 8 characters");
+            for (_ in Nat.range(0, 8 - (charCount % 8))) {
+                chars.add('='); // Add padding if needed
+            };
         };
 
         // Determine which lookup table to use
@@ -226,14 +228,12 @@ module {
         var bits : Nat32 = 0;
         var bitcount = 0;
         let isUriSafe = switch (format) {
-            case (#standard) false;
-            case (#url) true;
-            case (#urlWithPadding) true;
+            case (#standard(_)) false;
+            case (#url(_)) true;
         };
         let includePadding = switch (format) {
-            case (#standard) true;
-            case (#url) false;
-            case (#urlWithPadding) true;
+            case (#standard({ includePadding })) includePadding;
+            case (#url({ includePadding })) includePadding;
         };
 
         for (byte in data) {

@@ -3,7 +3,7 @@
 [![MOPS](https://img.shields.io/badge/MOPS-base--x--encoder-blue)](https://mops.one/base-x-encoder)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/yourusername/base-x-encoder/blob/main/LICENSE)
 
-A Motoko library for encoding and decoding data in various base formats including Base64, Base16 (Hex), and Base58.
+A Motoko library for encoding and decoding data in various base formats including Base64, Base32, Base16 (Hex), and Base58.
 
 ## Package
 
@@ -153,17 +153,42 @@ public type HexPrefixKind = {
     #single : Text; // '0x' -> 0xABCD
     #perByte : Text; // '\x' -> \xAB\xCD
 };
+
+public type Base64OutputFormat = {
+    #standard; // RFC 4648 Base64, with padding
+    #url; // RFC 4648 URL-safe Base64, no padding
+    #urlWithPadding; // RFC 4648 URL-safe Base64, with padding
+};
+
+public type Base32OutputFormat = {
+    #standard : { isUpper : Bool }; // RFC 4648, A-Z + 2-7, with padding
+    #extendedHex : { isUpper : Bool }; // RFC 4648, 0-9 + A-V, with padding
+};
+
+public type Base32InputFormat = {
+    #standard; // RFC 4648, A-Z + 2-7, with padding
+    #extendedHex; // RFC 4648, 0-9 + A-V, with padding
+};
 ```
 
 ### Base64 Functions
 
 ```motoko
 // Convert bytes to Base64 string
-// isUriSafe: if true, uses '-' and '_' instead of '+' and '/' and omits padding
-public func toBase64(data : Iter.Iter<Nat8>, isUriSafe : Bool) : Text;
+public func toBase64(data : Iter.Iter<Nat8>, format : Base64OutputFormat) : Text;
 
 // Decode Base64 string to bytes
 public func fromBase64(text : Text) : Result.Result<[Nat8], Text>;
+```
+
+### Base32 Functions
+
+```motoko
+// Convert bytes to Base32 string
+public func toBase32(data : Iter.Iter<Nat8>, format: Base32OutputFormat) : Text;
+
+// Decode Base64 string to bytes
+public func fromBase32(text : Text, format: Base32InputFormat) : Result.Result<[Nat8], Text>;
 ```
 
 ### Hexadecimal Functions
