@@ -21,8 +21,8 @@ To set up MOPS package manager, follow the instructions from the [MOPS Site](htt
 
 ```motoko
 import BaseX "mo:base-x-encoder";
-import Blob "mo:base/Blob";
-import Debug "mo:base/Debug";
+import Blob "mo:core/Blob";
+import Debug "mo:core/Debug";
 
 // Example data
 let data = [0x48, 0x65, 0x6C, 0x6C, 0x6F].vals(); // "Hello" in ASCII
@@ -40,8 +40,8 @@ Debug.print(uriSafe); // Output: "SGVsbG8"
 
 ```motoko
 import BaseX "mo:base-x-encoder";
-import Result "mo:new-base/Result";
-import Debug "mo:base/Debug";
+import Result "mo:core/Result";
+import Debug "mo:core/Debug";
 
 // Decode Base64 string
 let base64 = "SGVsbG8="; // "Hello" in Base64
@@ -62,7 +62,7 @@ switch (result) {
 
 ```motoko
 import BaseX "mo:base-x-encoder";
-import Debug "mo:base/Debug";
+import Debug "mo:core/Debug";
 
 // Example data
 let data = [0xA1, 0xB2, 0xC3].vals();
@@ -88,8 +88,8 @@ Debug.print(hex2); // Output: "\xa1\xb2\xc3"
 
 ```motoko
 import BaseX "mo:base-x-encoder";
-import Result "mo:new-base/Result";
-import Debug "mo:base/Debug";
+import Result "mo:core/Result";
+import Debug "mo:core/Debug";
 
 // Decode hex with 0x prefix
 let hex = "0xA1B2C3";
@@ -111,8 +111,8 @@ switch (result) {
 
 ```motoko
 import BaseX "mo:base-x-encoder";
-import Result "mo:new-base/Result";
-import Debug "mo:base/Debug";
+import Result "mo:core/Result";
+import Debug "mo:core/Debug";
 
 // Example data
 let data = [0x00, 0x01, 0x02].vals();

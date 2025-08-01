@@ -1,7 +1,6 @@
 import { test } "mo:test";
-import Debug "mo:base/Debug";
-import Runtime "mo:new-base/Runtime";
-import Blob "mo:new-base/Blob";
+import Runtime "mo:core/Runtime";
+import Blob "mo:core/Blob";
 import BaseX "../src";
 
 test(
@@ -208,7 +207,7 @@ test(
     for (testCase in testCases.vals()) {
       let actual = BaseX.toBase64(testCase.input.vals(), testCase.outputFormat);
       if (actual != testCase.expected) {
-        Debug.trap(
+        Runtime.trap(
           "toBase64 Failure\nValue: " # debug_show (testCase.input) # "\nOutputFormat: " # debug_show (testCase.outputFormat) # "\nExpected: " # testCase.expected # "\nActual:   " # actual
         );
       };
@@ -337,7 +336,7 @@ test(
     for (testCase in testCases.vals()) {
       let actual = BaseX.toHex(testCase.input.vals(), testCase.outputFormat);
       if (actual != testCase.expected) {
-        Debug.trap(
+        Runtime.trap(
           "toHex Failure\nValue: " # debug_show (testCase.input) #
           "\nFormat: " # debug_show (testCase.outputFormat) #
           "\nExpected: " # testCase.expected #
@@ -499,7 +498,7 @@ test(
     for (testCase in testCases.vals()) {
       let actual = BaseX.toBase58(testCase.input.vals());
       if (actual != testCase.expected) {
-        Debug.trap(
+        Runtime.trap(
           "toBase58 Failure\nValue: " # debug_show (testCase.input) #
           "\nExpected: " # testCase.expected #
           "\nActual:   " # actual
@@ -1098,7 +1097,7 @@ test(
     for (testCase in testCases.vals()) {
       let actual = BaseX.toBase32(testCase.input.vals(), testCase.outputFormat);
       if (actual != testCase.expected) {
-        Debug.trap(
+        Runtime.trap(
           "toBase32 Failure\nValue: " # debug_show (testCase.input) #
           "\nOutputFormat: " # debug_show (testCase.outputFormat) #
           "\nExpected: " # testCase.expected #
