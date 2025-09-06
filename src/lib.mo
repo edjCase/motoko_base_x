@@ -1,15 +1,15 @@
-import Text "mo:core/Text";
-import Iter "mo:core/Iter";
-import Nat8 "mo:core/Nat8";
-import Nat32 "mo:core/Nat32";
-import Result "mo:core/Result";
-import Char "mo:core/Char";
-import Nat "mo:core/Nat";
-import List "mo:core/List";
-import Array "mo:core/Array";
-import VarArray "mo:core/VarArray";
-import Nat64 "mo:core/Nat64";
-import Runtime "mo:core/Runtime";
+import Text "mo:core@1/Text";
+import Iter "mo:core@1/Iter";
+import Nat8 "mo:core@1/Nat8";
+import Nat32 "mo:core@1/Nat32";
+import Result "mo:core@1/Result";
+import Char "mo:core@1/Char";
+import Nat "mo:core@1/Nat";
+import List "mo:core@1/List";
+import Array "mo:core@1/Array";
+import VarArray "mo:core@1/VarArray";
+import Nat64 "mo:core@1/Nat64";
+import Runtime "mo:core@1/Runtime";
 import Prim "mo:⛔";
 
 module {
@@ -165,7 +165,7 @@ module {
       var paddingStarted = false;
 
       for (j in Nat.range(0, 8)) {
-        let char = List.get(chars, blockStart + j);
+        let char = List.at(chars, blockStart + j);
 
         if (char == '=') {
           if (not paddingStarted) {
@@ -313,10 +313,10 @@ module {
       let blockStart = i * 4;
 
       // Get the 4 characters in this block
-      let c1 = List.get(chars, blockStart);
-      let c2 = List.get(chars, blockStart + 1);
-      let c3 = List.get(chars, blockStart + 2);
-      let c4 = List.get(chars, blockStart + 3);
+      let c1 = List.at(chars, blockStart);
+      let c2 = List.at(chars, blockStart + 1);
+      let c3 = List.at(chars, blockStart + 2);
+      let c4 = List.at(chars, blockStart + 3);
       if (c1 == '=' or c2 == '=') {
         return #err("Invalid Base64 string: Padding character '=' found in the middle of the string");
       };

@@ -1,6 +1,6 @@
 import { test } "mo:test";
-import Runtime "mo:core/Runtime";
-import Blob "mo:core/Blob";
+import Runtime "mo:core@1/Runtime";
+import Blob "mo:core@1/Blob";
 import BaseX "../src";
 
 test(
